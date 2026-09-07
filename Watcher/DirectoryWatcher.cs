@@ -33,12 +33,48 @@ namespace FKP41
                 }
             }
         }
+        private DateTime? lastBackupTime;
+        public DateTime? LastBackupTime
+        {
+            get
+            {
+                bool token = false;
+                try
+                {
+                    spinLock.TryEnter(1000, ref token);
+                    return lastBackupTime;
+                }
+                finally
+                {
+                    if (token) spinLock.Exit();
+                }
+            }
+        }
+        private uint fileCount;
+        public uint FileCount
+        {
+            get
+            {
+                bool token = false;
+                try
+                {
+                    spinLock.TryEnter(1000, ref token);
+                    return fileCount;
+                }
+                finally
+                {
+                    if (token) spinLock.Exit();
+                }
+            }
+        }
+
         private SpinLock spinLock;
 
         public DirectoryWatcher(string path)
         {
             _directory = new(path);
             this.status = WatcherStatus.Unknown;
+            this.lastBackupTime = null;
             spinLock = new SpinLock();
         }
         // This method is called by the Set accessor of each property.
@@ -52,7 +88,9 @@ namespace FKP41
         {
             bool token = false;
             WatcherStatus status;
-            bool isChenged = false;
+            uint fileCount;
+            bool isChengedStatus = false;
+            bool isChengedCount = false;
             try
             {
                 spinLock.TryEnter(1000, ref token);
@@ -60,13 +98,21 @@ namespace FKP41
                 if (_directory.Exists)
                 {
                     if (status != WatcherStatus.Accepted)
+                    {
                         this.status = WatcherStatus.Forbidden;
+                        fileCount = (uint)_directory.EnumerateFiles().Count();
+                        if (fileCount != this.fileCount)
+                        {
+                            this.fileCount = fileCount;
+                            isChengedCount = true;
+                        }
+                    }
                 }
                 else
                 {
                     this.status = WatcherStatus.NotFound;
                 }
-                isChenged = status != this.status;
+                isChengedStatus = status != this.status;
             }
             catch
             {
@@ -76,8 +122,10 @@ namespace FKP41
             {
                 if (token) spinLock.Exit();
             }
-            if (isChenged)
+            if (isChengedStatus)
                 NotifyPropertyChanged(nameof(Status));
+            if (isChengedCount)
+                NotifyPropertyChanged(nameof(FileCount));
         }
     }
 }
