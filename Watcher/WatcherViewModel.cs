@@ -18,11 +18,34 @@ namespace FKP41
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _watcher.FilePath;
         }
+        public WatcherStatus Status
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _watcher.Status;
+        }
+        public DateTime? LastBackupTime
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _watcher.LastBackupTime;
+        }
+        private DateTime nextBackupTime;
+        private TimeSpan nextBackupSpan;
+        public TimeSpan NextBackupSpan
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => nextBackupSpan;
+        }
+        public uint FileCount
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _watcher.FileCount;
+        }
 
         public WatcherViewModel(IWatcher watcher)
         {
             this._watcher = watcher;
             this._watcher.PropertyChanged += OnPropertyChanged;
+            this.nextBackupTime = DateTime.UtcNow + TimeSpan.FromMinutes(5);
         }
 
         // This method is called by the Set accessor of each property.
@@ -34,7 +57,33 @@ namespace FKP41
         }
         private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-
+            switch (e.PropertyName)
+            {
+                case nameof(IWatcher.Status):
+                    NotifyPropertyChanged(nameof(Status));
+                    break;
+                case nameof(IWatcher.LastBackupTime):
+                    NotifyPropertyChanged(nameof(LastBackupTime));
+                    break;
+                case nameof(IWatcher.FileCount):
+                    NotifyPropertyChanged(nameof(FileCount));
+                    break;
+            }
+        }
+        public void OnUpdateNextBackupSpan()
+        {
+            TimeSpan span = nextBackupTime - DateTime.UtcNow;
+            if (span.Ticks < 0)
+                span = TimeSpan.Zero;
+            if (span != this.nextBackupSpan)
+            {
+                this.nextBackupSpan = span;
+                NotifyPropertyChanged(nameof(NextBackupSpan));
+            }
+        }
+        public void OnUpdateStatus()
+        {
+            _watcher.OnUpdateStatus();
         }
 
         #region Dispose
