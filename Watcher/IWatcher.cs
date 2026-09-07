@@ -9,5 +9,6 @@ namespace FKP41
     {
         public string FilePath { get; }
         public WatcherStatus Status { get; }
+        public void OnUpdateStatus();
     }
 }
