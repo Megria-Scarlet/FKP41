@@ -38,14 +38,46 @@ namespace FKP41
         public DirectoryWatcher(string path)
         {
             _directory = new(path);
+            this.status = WatcherStatus.Unknown;
             spinLock = new SpinLock();
         }
         // This method is called by the Set accessor of each property.
         // The CallerMemberName attribute that is applied to the optional propertyName
         // parameter causes the property name of the caller to be substituted as an argument.
-        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        public void OnUpdateStatus()
+        {
+            bool token = false;
+            WatcherStatus status;
+            bool isChenged = false;
+            try
+            {
+                spinLock.TryEnter(1000, ref token);
+                status = this.status;
+                if (_directory.Exists)
+                {
+                    if (status != WatcherStatus.Accepted)
+                        this.status = WatcherStatus.Forbidden;
+                }
+                else
+                {
+                    this.status = WatcherStatus.NotFound;
+                }
+                isChenged = status != this.status;
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                if (token) spinLock.Exit();
+            }
+            if (isChenged)
+                NotifyPropertyChanged(nameof(Status));
         }
     }
 }
