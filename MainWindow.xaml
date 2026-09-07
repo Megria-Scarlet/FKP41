@@ -9,8 +9,46 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="25"/>
             <RowDefinition Height="40"/>
         </Grid.RowDefinitions>
+        <ListView x:Name="WatcherListView">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=FilePath}">
+                        <GridViewColumnHeader Name="columnheaderField1" Content="FilePath"/>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Status}">
+                        <GridViewColumnHeader Name="columnheaderField2" Content="Status" />
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=LastBackupTime, TargetNullValue=---}">
+                        <GridViewColumnHeader Content="LastBackupTime" />
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=NextBackupSpan, TargetNullValue=---}">
+                        <GridViewColumnHeader Content="NextBackup" />
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=FileCount, TargetNullValue=---}">
+                        <GridViewColumnHeader Content="Files" />
+                    </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumnHeader Content="チェック" Tag="Chk" />
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Path=Chk}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding ElementName=WatcherListView, Path=Items.Count, StringFormat=項目数: {0:N0} 件}" Grid.Column="2"/>
+        </Grid>
         <Grid Grid.Row="999" Background="LightGray">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
