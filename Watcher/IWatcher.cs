@@ -11,6 +11,7 @@ namespace FKP41
         public WatcherStatus Status { get; }
         public DateTime? LastBackupTime { get; }
         public uint FileCount { get; }
+        public bool IsEnable { get; set; }
         public void OnUpdateStatus();
     }
 }
