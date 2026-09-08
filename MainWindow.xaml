@@ -6,6 +6,11 @@
         xmlns:local="clr-namespace:FKP41"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
+    <Window.Resources>
+        <ResourceDictionary>
+            <local:TimeSpanConveter x:Key="TimeSpanConveter"/>
+        </ResourceDictionary>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -15,21 +20,6 @@
         <ListView x:Name="WatcherListView">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=FilePath}">
-                        <GridViewColumnHeader Name="columnheaderField1" Content="FilePath"/>
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Status}">
-                        <GridViewColumnHeader Name="columnheaderField2" Content="Status" />
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=LastBackupTime, TargetNullValue=---}">
-                        <GridViewColumnHeader Content="LastBackupTime" />
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=NextBackupSpan, TargetNullValue=---}">
-                        <GridViewColumnHeader Content="NextBackup" />
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=FileCount, TargetNullValue=---}">
-                        <GridViewColumnHeader Content="Files" />
-                    </GridViewColumn>
                     <GridViewColumn>
                         <GridViewColumnHeader Content="Enable"/>
                         <GridViewColumn.CellTemplate>
@@ -37,6 +27,24 @@
                                 <CheckBox IsChecked="{Binding Path=IsEnable}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=FilePath}">
+                        <GridViewColumnHeader Name="columnheaderField1" Content="FilePath"/>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Status}">
+                        <GridViewColumnHeader Name="columnheaderField2" Content="Status" />
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=LastBackupTime, StringFormat=yyyy/MM/dd HH:mm:ss, TargetNullValue=---}">
+                        <GridViewColumnHeader Content="LastBackupTime" />
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=NextBackupSpan, Converter={StaticResource TimeSpanConveter}, TargetNullValue=---}">
+                        <GridViewColumnHeader Content="NextBackup" />
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=FileCount, TargetNullValue=---}">
+                        <GridViewColumnHeader Content="Files" />
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=RawByteSize, StringFormat={}{0:N0}}">
+                        <GridViewColumnHeader Content="Byte size" />
                     </GridViewColumn>
                 </GridView>
             </ListView.View>
