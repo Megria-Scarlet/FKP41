@@ -11,6 +11,7 @@ namespace FKP41
     {
         private const int DefaultTimeout = 1000;
         private DirectoryInfo _directory;
+        private BackupManager backupManager;
         public event PropertyChangedEventHandler? PropertyChanged;
         public string FilePath
         {
@@ -136,13 +137,14 @@ namespace FKP41
 
         private SpinLock spinLock;
 
-        public DirectoryWatcher(string path)
+        public DirectoryWatcher(string path, BackupManager backupManager)
         {
             _directory = new(path);
             this.status = WatcherStatus.Unknown;
             this.lastBackupTime = null;
             this.isEnable = true;
             spinLock = new SpinLock();
+            this.backupManager = backupManager;
         }
         // This method is called by the Set accessor of each property.
         // The CallerMemberName attribute that is applied to the optional propertyName
@@ -225,6 +227,20 @@ namespace FKP41
                 if (token) spinLock.Exit();
             }
             NotifyPropertyChanged(nameof(Status));
+
+            DirectoryInfo directory = new(backupManager.GetBackupDirectory(FilePath));
+            if (!directory.Exists)
+                directory.Create();
+            string archiveName = Path.Combine(directory.FullName, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".zip");
+
+            var archive = System.IO.Compression.ZipFile.Open(archiveName, System.IO.Compression.ZipArchiveMode.Create);
+
+            IEnumerable<FileInfo> files = backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories));
+            foreach (FileInfo file in files)
+            {
+                string p;
+                //archive.CreateEntry(file.FullName.TrimStart())
+            }
 
             Task.Delay(1000).Wait();
 
