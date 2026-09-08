@@ -31,7 +31,7 @@
                         <GridViewColumnHeader Content="Files" />
                     </GridViewColumn>
                     <GridViewColumn>
-                        <GridViewColumnHeader Content="チェック" Tag="Chk" />
+                        <GridViewColumnHeader Content="Enable" Tag="Chk" />
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox IsChecked="{Binding Path=Chk}" />
