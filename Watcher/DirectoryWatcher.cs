@@ -174,7 +174,7 @@ namespace FKP41
                         {
                             this.status = WatcherStatus.Continue;
                             isChangedCount = IsChanged(ref this.fileCount, (uint)_directory.EnumerateFiles().Count());
-                            isChangedByteSize = IsChanged(ref this.rawByteSize, _directory.EnumerateFiles("*.*", SearchOption.AllDirectories).Sum(fi => fi.Length));
+                            isChangedByteSize = IsChanged(ref this.rawByteSize, backupManager.RemovedBackupFiles(_directory.EnumerateFiles("*.*", SearchOption.AllDirectories)).Sum(fi => fi.Length));
                         }
                     }
                     else
@@ -238,15 +238,14 @@ namespace FKP41
             IEnumerable<FileInfo> files = backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories));
             foreach (FileInfo file in files)
             {
-                string p;
-                //archive.CreateEntry(file.FullName.TrimStart())
+                string p = Path.Combine(this._directory.Name, StartExtract(file.FullName, this._directory.FullName).TrimStart(Path.DirectorySeparatorChar).ToString());
+                _ = System.IO.Compression.ZipFileExtensions.CreateEntryFromFile(archive, file.FullName, p, System.IO.Compression.CompressionLevel.SmallestSize);
             }
-
-            Task.Delay(1000).Wait();
+            archive.Dispose();
 
             token = false;
             bool isChangedByteSize = false;
-            long rawByteSize = _directory.EnumerateFiles("*.*", SearchOption.AllDirectories).Sum(fi => fi.Length);
+            long rawByteSize = backupManager.RemovedBackupFiles(_directory.EnumerateFiles("*.*", SearchOption.AllDirectories)).Sum(fi => fi.Length);
             try
             {
                 spinLock.TryEnter(ref token);
@@ -273,6 +272,24 @@ namespace FKP41
                 return true;
             }
             return false;
+        }
+        private static ReadOnlySpan<char> StartExtract(ReadOnlySpan<char> input, ReadOnlySpan<char> extruct)
+        {
+            int i = 0;
+            for (; i < extruct.Length; i++)
+            {
+                if (i == input.Length)
+                {
+                    return [];
+                }
+                if (input[i] != extruct[i])
+                {
+                    return input;
+                }
+            }
+            ref char reference = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(input);
+            reference = ref System.Runtime.CompilerServices.Unsafe.Add(ref reference, i);
+            return System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref reference, input.Length - i);
         }
     }
 }
