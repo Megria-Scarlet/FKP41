@@ -236,9 +236,7 @@ namespace FKP41
             this.count = 0;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#if NET
         [System.Diagnostics.StackTraceHidden]
-#endif
         private readonly void ThrowIfDisposed()
         {
             ObjectDisposedException.ThrowIf(IsDisposed, typeof(SpanPrimitiveList<>));
