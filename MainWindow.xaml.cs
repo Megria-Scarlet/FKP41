@@ -76,9 +76,44 @@ namespace FKP41
         private void OnAutoBackup(object? state)
         {
             Timer? timer = (Timer?)state;
-            foreach (var watcher in watcherViewModels.Select(x => x.IsEnable))
+            foreach (var watcher in watcherViewModels.Where(x => x.IsEnable))
             {
+                if (watcher.NextBackupSpan <= TimeSpan.Zero)
+                    watcher.OnBackup();
+            }
+        }
 
+        private void AddButton_PreviewDragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effects = DragDropEffects.All;
+                e.Handled = true;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+        }
+
+        private void AddButton_PreviewDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var fileNames = (string[])e.Data.GetData(DataFormats.FileDrop);
+                foreach (var name in fileNames)
+                {
+                    if (System.IO.File.Exists(name))
+                    {
+
+                    }
+                    else if (System.IO.Directory.Exists(name))
+                    {
+                        DirectoryWatcher watcher = new(name);
+                        watcher.OnUpdateStatus();
+                        watcherViewModels.Add(new(watcher));
+                    }
+                }
             }
         }
     }

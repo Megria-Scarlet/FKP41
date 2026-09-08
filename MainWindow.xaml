@@ -54,7 +54,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="1" Margin="3" Content="追加">
+            <Button Grid.Column="1" Margin="3" Content="追加" AllowDrop="True" PreviewDragOver="AddButton_PreviewDragOver" PreviewDrop="AddButton_PreviewDrop">
             </Button>
         </Grid>
     </Grid>
