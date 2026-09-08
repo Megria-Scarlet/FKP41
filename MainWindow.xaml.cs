@@ -76,7 +76,7 @@ namespace FKP41
         private void OnAutoBackup(object? state)
         {
             Timer? timer = (Timer?)state;
-            foreach (var watcher in watcherViewModels)
+            foreach (var watcher in watcherViewModels.Select(x => x.IsEnable))
             {
 
             }
