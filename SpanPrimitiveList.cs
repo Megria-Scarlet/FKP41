@@ -145,9 +145,7 @@ namespace FKP41
             int newCapacity = span.Length == 0 ? DefaultCapacity : 2 * span.Length;
 
             // Allow the list to grow to maximum possible capacity (~2G elements) before encountering overflow.
-            // Note that this check works even when _items.Length overflowed thanks to the (uint) cast
             // リストがオーバーフローする前に、可能な限り最大の容量（約2G要素）まで拡張できるようにします。
-            // なお、このチェックは、(uint)型へのキャストのおかげで、array.Lengthがオーバーフローした場合でも機能します。
             if (((ulong)newCapacity) * (ulong)Unsafe.SizeOf<T>() > (ulong)Array.MaxLength) newCapacity = (Array.MaxLength / Unsafe.SizeOf<T>());
 
             // If the computed capacity is still less than specified, set to the original argument.
