@@ -52,7 +52,7 @@ namespace FKP41
         {
             this._watcher = watcher;
             this._watcher.PropertyChanged += OnPropertyChanged;
-            this.nextBackupTime = DateTime.UtcNow + TimeSpan.FromMinutes(5);
+            this.nextBackupTime = DateTime.UtcNow + TimeSpan.FromMinutes(1);
         }
 
         // This method is called by the Set accessor of each property.
@@ -94,6 +94,13 @@ namespace FKP41
         public void OnUpdateStatus()
         {
             _watcher.OnUpdateStatus();
+        }
+
+        public void OnBackup()
+        {
+            _watcher.OnBackup();
+            this.nextBackupTime = DateTime.UtcNow + TimeSpan.FromMinutes(1);
+            OnUpdateNextBackupSpan();
         }
 
         #region Dispose
