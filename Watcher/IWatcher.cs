@@ -13,5 +13,6 @@ namespace FKP41
         public uint FileCount { get; }
         public bool IsEnable { get; set; }
         public void OnUpdateStatus();
+        public void OnBackup();
     }
 }
