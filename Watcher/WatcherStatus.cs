@@ -7,6 +7,11 @@ namespace FKP41
     public enum WatcherStatus
     {
         Unknown = 0,
+        Invalid = 1,
+        /// <summary>
+        /// リクエスト継続可能
+        /// </summary>
+        Continue = 100,
         /// <summary>
         /// 処理中
         /// </summary>
@@ -27,6 +32,5 @@ namespace FKP41
         /// ティーポットでコーヒーを淹れようとする試みを拒否
         /// </summary>
         I_am_a_teapot = 418,
-        Invalid = 1
     }
 }
