@@ -180,5 +180,50 @@ namespace FKP41
             if (isChengedCount)
                 NotifyPropertyChanged(nameof(FileCount));
         }
+        private bool isRunningBackup;
+        public void OnBackup()
+        {
+            bool token = false;
+
+            try
+            {
+                spinLock.TryEnter(DefaultTimeout, ref token);
+                if (isRunningBackup || !isEnable)
+                {
+                    return;
+                }
+                else
+                {
+                    isRunningBackup = true;
+                    status = WatcherStatus.Processing;
+                }
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                if (token) spinLock.Exit();
+            }
+            NotifyPropertyChanged(nameof(Status));
+
+            Task.Delay(1000).Wait();
+
+            token = false;
+            try
+            {
+                spinLock.TryEnter(ref token);
+                lastBackupTime = DateTime.Now;
+                isRunningBackup = false;
+                status = WatcherStatus.Continue;
+            }
+            finally
+            {
+                if (token) spinLock.Exit();
+            }
+            NotifyPropertyChanged(nameof(LastBackupTime));
+            NotifyPropertyChanged(nameof(Status));
+        }
     }
 }
