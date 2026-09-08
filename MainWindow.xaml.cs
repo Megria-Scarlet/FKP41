@@ -24,6 +24,7 @@ namespace FKP41
             [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
             get => backupPath;
         }
+        private BackupManager backupManager;
 
         #region Timer
 
@@ -36,11 +37,14 @@ namespace FKP41
         {
             InitializeComponent();
             this.Loaded += OnLoaded;
+            backupPath = new(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(App.DllFilePath)!, "backup"));
+            backupManager = new(backupPath);
+
             watcherViewModels = [];
             watcherViewModels =
                 [
                     //new(new DirectoryWatcher(string.Empty)),
-                    new(new DirectoryWatcher(Environment.CurrentDirectory))
+                    new(new DirectoryWatcher(Environment.CurrentDirectory, backupManager))
                 ];
             renderTimer = new(System.Windows.Threading.DispatcherPriority.Render)
             {
@@ -53,7 +57,6 @@ namespace FKP41
             };
             statusTimer.Tick += OnStatusUpdate;
             backupTimer = new(OnAutoBackup);
-            backupPath = new(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(App.DllFilePath)!, "backup"));
         }
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
@@ -130,7 +133,7 @@ namespace FKP41
                     }
                     else if (System.IO.Directory.Exists(name))
                     {
-                        DirectoryWatcher watcher = new(name);
+                        DirectoryWatcher watcher = new(name, backupManager);
                         watcher.OnUpdateStatus();
                         watcherViewModels.Add(new(watcher));
                     }
