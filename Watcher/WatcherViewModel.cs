@@ -48,6 +48,12 @@ namespace FKP41
             set => _watcher.IsEnable = value;
         }
 
+        public long RawByteSize
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _watcher.RawByteSize;
+        }
+
         public WatcherViewModel(IWatcher watcher)
         {
             this._watcher = watcher;

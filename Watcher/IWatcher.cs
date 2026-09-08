@@ -12,6 +12,7 @@ namespace FKP41
         public DateTime? LastBackupTime { get; }
         public uint FileCount { get; }
         public bool IsEnable { get; set; }
+        public long RawByteSize { get; }
         public void OnUpdateStatus();
         public void OnBackup();
     }

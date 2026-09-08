@@ -116,6 +116,23 @@ namespace FKP41
                 }
             }
         }
+        private long rawByteSize;
+        public long RawByteSize
+        {
+            get
+            {
+                bool token = false;
+                try
+                {
+                    spinLock.TryEnter(DefaultTimeout, ref token);
+                    return rawByteSize;
+                }
+                finally
+                {
+                    if (token) spinLock.Exit();
+                }
+            }
+        }
 
         private SpinLock spinLock;
 
@@ -138,9 +155,9 @@ namespace FKP41
         {
             bool token = false;
             WatcherStatus status;
-            uint fileCount;
-            bool isChengedStatus = false;
-            bool isChengedCount = false;
+            bool isChangedStatus = false;
+            bool isChangedCount = false;
+            bool isChangedByteSize = false;
             try
             {
                 spinLock.TryEnter(DefaultTimeout, ref token);
@@ -152,19 +169,16 @@ namespace FKP41
                         if (status != WatcherStatus.Continue)
                         {
                             this.status = WatcherStatus.Continue;
-                            fileCount = (uint)_directory.EnumerateFiles().Count();
-                            if (fileCount != this.fileCount)
-                            {
-                                this.fileCount = fileCount;
-                                isChengedCount = true;
-                            }
+                            isChangedCount = IsChanged(ref this.fileCount, (uint)_directory.EnumerateFiles().Count());
+                            isChangedByteSize = IsChanged(ref this.rawByteSize, _directory.EnumerateFiles("*.*", SearchOption.AllDirectories).Sum(fi => fi.Length));
                         }
                     }
                     else
                     {
                         this.status = WatcherStatus.NotFound;
+                        isChangedByteSize = IsChanged(ref this.rawByteSize, 0);
                     }
-                    isChengedStatus = status != this.status;
+                    isChangedStatus = status != this.status;
                 }
             }
             catch
@@ -175,10 +189,12 @@ namespace FKP41
             {
                 if (token) spinLock.Exit();
             }
-            if (isChengedStatus)
+            if (isChangedStatus)
                 NotifyPropertyChanged(nameof(Status));
-            if (isChengedCount)
+            if (isChangedCount)
                 NotifyPropertyChanged(nameof(FileCount));
+            if (isChangedByteSize)
+                NotifyPropertyChanged(nameof(RawByteSize));
         }
         private bool isRunningBackup;
         public void OnBackup()
@@ -211,12 +227,15 @@ namespace FKP41
             Task.Delay(1000).Wait();
 
             token = false;
+            bool isChangedByteSize = false;
+            long rawByteSize = _directory.EnumerateFiles("*.*", SearchOption.AllDirectories).Sum(fi => fi.Length);
             try
             {
                 spinLock.TryEnter(ref token);
                 lastBackupTime = DateTime.Now;
                 isRunningBackup = false;
                 status = WatcherStatus.Continue;
+                isChangedByteSize = IsChanged(ref this.rawByteSize, rawByteSize);
             }
             finally
             {
@@ -224,6 +243,18 @@ namespace FKP41
             }
             NotifyPropertyChanged(nameof(LastBackupTime));
             NotifyPropertyChanged(nameof(Status));
+            if (isChangedByteSize)
+                NotifyPropertyChanged(nameof(RawByteSize));
+        }
+
+        private static bool IsChanged<T>(scoped ref T destination, T value) where T : System.Numerics.IEqualityOperators<T, T, bool>
+        {
+            if (destination != value)
+            {
+                destination = value;
+                return true;
+            }
+            return false;
         }
     }
 }
