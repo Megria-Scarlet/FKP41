@@ -59,7 +59,14 @@ namespace FKP41
             if (file.Exists)
             {
                 using FileStream fileStream = file.OpenRead();
-                backupPairs = JsonSerializer.Deserialize<Dictionary<string, string>>(fileStream, GetJsonOptions())!;
+                try
+                {
+                    backupPairs = JsonSerializer.Deserialize<Dictionary<string, string>>(fileStream, GetJsonOptions())!;
+                }
+                catch (JsonException)
+                {
+                    backupPairs = [];
+                }
             }
             else
             {
@@ -69,6 +76,11 @@ namespace FKP41
         private void SaveIndexFile()
         {
             var file = GetIndexFile();
+            var directory = file.Directory;
+            if (!directory!.Exists)
+            {
+                directory.Create();
+            }
             using FileStream fileStream = file.Open(FileMode.OpenOrCreate, FileAccess.Write);
             fileStream.SetLength(0);
             JsonSerializer.Serialize(fileStream, backupPairs, GetJsonOptions());
@@ -82,9 +94,22 @@ namespace FKP41
             JsonSerializerOptions options = new JsonSerializerOptions
             {
                 Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(System.Text.Unicode.UnicodeRanges.All),
-                IndentSize = 4
+                IndentSize = 4,
+                WriteIndented = true,
             };
             return options;
+        }
+        public IEnumerable<FileInfo> RemovedBackupFiles(IEnumerable<FileInfo> files)
+        {
+            DirectoryInfo rootDirectory = new(this.rootBackupDirectory.Value);
+            if (rootDirectory.Exists)
+            {
+                return files.Where(x => x.FullName.AsSpan().StartsWith(rootDirectory.FullName));
+            }
+            else
+            {
+                return files;
+            }
         }
 
         #region Dispose
