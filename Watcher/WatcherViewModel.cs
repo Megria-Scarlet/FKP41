@@ -98,7 +98,14 @@ namespace FKP41
 
         public void OnBackup()
         {
-            _watcher.OnBackup();
+            try
+            {
+                _watcher.OnBackup();
+            }
+            catch (System.IO.IOException)
+            {
+                return;
+            }
             this.nextBackupTime = DateTime.UtcNow + TimeSpan.FromMinutes(1);
             OnUpdateNextBackupSpan();
         }
