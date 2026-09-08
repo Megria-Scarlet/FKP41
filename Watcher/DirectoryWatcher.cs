@@ -86,7 +86,7 @@ namespace FKP41
             set
             {
                 bool token = false;
-                int isChenged = 0;
+                bool isChenged = true;
                 try
                 {
                     spinLock.TryEnter(1000, ref token);
@@ -96,22 +96,23 @@ namespace FKP41
                         if (!value)
                         {
                             this.status = WatcherStatus.Invalid;
-                            isChenged = 2;
                         }
                         else
                         {
-                            isChenged = 1;
+                            this.status = WatcherStatus.Accepted;
                         }
+                        isChenged = true;
                     }
                 }
                 finally
                 {
                     if (token) spinLock.Exit();
                 }
-                if (isChenged != 0)
+                if (isChenged)
+                {
                     NotifyPropertyChanged(nameof(IsEnable));
-                if (isChenged == 2)
                     NotifyPropertyChanged(nameof(Status));
+                }
             }
         }
 
@@ -142,25 +143,28 @@ namespace FKP41
             try
             {
                 spinLock.TryEnter(1000, ref token);
-                status = this.status;
-                if (_directory.Exists)
+                if (isEnable)
                 {
-                    if (status != WatcherStatus.Accepted)
+                    status = this.status;
+                    if (_directory.Exists)
                     {
-                        this.status = WatcherStatus.Forbidden;
-                        fileCount = (uint)_directory.EnumerateFiles().Count();
-                        if (fileCount != this.fileCount)
+                        if (status != WatcherStatus.Continue)
                         {
-                            this.fileCount = fileCount;
-                            isChengedCount = true;
+                            this.status = WatcherStatus.Continue;
+                            fileCount = (uint)_directory.EnumerateFiles().Count();
+                            if (fileCount != this.fileCount)
+                            {
+                                this.fileCount = fileCount;
+                                isChengedCount = true;
+                            }
                         }
                     }
+                    else
+                    {
+                        this.status = WatcherStatus.NotFound;
+                    }
+                    isChengedStatus = status != this.status;
                 }
-                else
-                {
-                    this.status = WatcherStatus.NotFound;
-                }
-                isChengedStatus = status != this.status;
             }
             catch
             {
