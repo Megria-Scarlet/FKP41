@@ -6,7 +6,7 @@ using System.Text;
 
 namespace FKP41
 {
-    public class WatcherViewModel : INotifyPropertyChanged, IDisposable
+    public class WatcherViewModel : INotifyPropertyChanged, IDisposable, IWatcher
     {
         private IWatcher _watcher;
         private bool disposedValue;
