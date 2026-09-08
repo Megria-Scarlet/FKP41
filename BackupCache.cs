@@ -36,49 +36,57 @@ namespace FKP41
             static void WriteUtf8(ReadOnlySpan<char> chars, Stream stream)
             {
                 Span<byte> buffer = stackalloc byte[128];
-                System.Buffers.ArrayPool<byte> arrayPool = System.Buffers.ArrayPool<byte>.Shared;
-                byte[]? bufferArray = null;
-                int count = 0;
 
-                System.Buffers.OperationStatus status;
-                do
-                {
-                    status = System.Text.Unicode.Utf8.FromUtf16(chars, buffer[count..], out int charsRead, out int bytesWritten, true, true);
-                    count += bytesWritten;
-                    chars = chars[charsRead..];
-
-                    if (status == System.Buffers.OperationStatus.DestinationTooSmall)
-                    {
-                        Grow(ref buffer, count, ref bufferArray, arrayPool);
-                        continue;
-                    }
-                }
-                while (false);
+                SpanPrimitiveList<byte> primitiveList = new(buffer);
+                int write = primitiveList.WriteUtf8(chars);
 
                 Span<byte> buffer1 = stackalloc byte[sizeof(uint)];
-                System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(buffer1, (uint)count);
+                System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(buffer1, (uint)write);
                 stream.Write(buffer1);
-                stream.Write(buffer[..count]);
-
-
-                static void Grow(ref Span<byte> buffer, int count, ref byte[]? array, System.Buffers.ArrayPool<byte> pool)
-                {
-                    byte[] newArray = pool.Rent(checked(buffer.Length * 2));
-                    buffer[..count].CopyTo(newArray);
-                    if (array is not null)
-                        pool.Return(array);
-                    array = newArray;
-                    buffer = array.AsSpan();
-                }
+                stream.Write(primitiveList.AsSpan());
             }
         }
         public static BackupCache ReadStream(Stream stream)
         {
-            Span<byte> buffers = stackalloc byte[sizeof(long)];
-            stream.ReadExactly(buffers);
-            BackupCache stamp = new BackupCache();
+            Span<byte> buffer = stackalloc byte[sizeof(long)];
+            stream.ReadExactly(buffer);
+            BackupCache cache = new BackupCache();
+            cache.lastWriteTime = DateTime.FromBinary(System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(buffer));
+            stream.ReadExactly(buffer);
+            cache.fileLength = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(buffer);
+            Span<byte> buffer1 = buffer[..sizeof(uint)];
+            stream.ReadExactly(buffer1);
+            uint utf8Length = System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(buffer1);
+            if (utf8Length <= 128)
+            {
+                Span<byte> buffer2 = stackalloc byte[(int)utf8Length];
+                stream.ReadExactly(buffer2);
+                cache.fileName = A(buffer2);
+            }
+            else
+            {
+                var pool = System.Buffers.ArrayPool<byte>.Shared;
+                byte[] array = pool.Rent((int)utf8Length);
+                try
+                {
+                    Span<byte> buffer2 = array.AsSpan(0, (int)utf8Length);
+                    stream.ReadExactly(buffer2);
+                    cache.fileName = A(buffer2);
+                }
+                finally
+                {
+                    pool.Return(array);
+                }
+            }
 
-            return default;
+            return cache;
+
+            static string A(scoped Span<byte> buffer)
+            {
+                SpanPrimitiveList<char> list = new(stackalloc char[32]);
+                _ = list.WriteUtf16(buffer);
+                return list.AsSpan().ToString();
+            }
         }
     }
 }
