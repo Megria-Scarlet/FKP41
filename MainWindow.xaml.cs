@@ -18,6 +18,12 @@ namespace FKP41
     {
 
         private System.Collections.ObjectModel.ObservableCollection<WatcherViewModel> watcherViewModels;
+        private ObservableObject<string> backupPath;
+        public string BackupPath
+        {
+            [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+            get => backupPath;
+        }
 
         #region Timer
 
@@ -47,12 +53,19 @@ namespace FKP41
             };
             statusTimer.Tick += OnStatusUpdate;
             backupTimer = new(OnAutoBackup);
+            backupPath = new(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(App.DllFilePath)!, "backup"));
         }
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             this.WatcherListView.ItemsSource = watcherViewModels;
             OnStartTimer();
             OnStatusUpdate(sender, e);
+            Binding binding = new(nameof(ObservableObject<>.Value))
+            {
+                Source = backupPath,
+                StringFormat = "バックアップ保存先:\"{0}\""
+            };
+            BackupDirectoryView.SetBinding(TextBlock.TextProperty, binding);
 
             void OnStartTimer()
             {

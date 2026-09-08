@@ -47,6 +47,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
+            <TextBlock x:Name="BackupDirectoryView" Grid.Column="0"/>
             <TextBlock Text="{Binding ElementName=WatcherListView, Path=Items.Count, StringFormat=項目数: {0:N0} 件}" Grid.Column="2"/>
         </Grid>
         <Grid Grid.Row="999" Background="LightGray">
