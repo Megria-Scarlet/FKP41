@@ -104,7 +104,7 @@ namespace FKP41
             DirectoryInfo rootDirectory = new(this.rootBackupDirectory.Value);
             if (rootDirectory.Exists)
             {
-                return files.Where(x => x.FullName.AsSpan().StartsWith(rootDirectory.FullName));
+                return files.Where(x => !x.FullName.AsSpan().StartsWith(rootDirectory.FullName));
             }
             else
             {
