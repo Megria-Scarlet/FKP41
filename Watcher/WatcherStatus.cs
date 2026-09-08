@@ -26,6 +26,7 @@ namespace FKP41
         /// <summary>
         /// ティーポットでコーヒーを淹れようとする試みを拒否
         /// </summary>
-        I_am_a_teapot = 418
+        I_am_a_teapot = 418,
+        Invalid = 1
     }
 }
