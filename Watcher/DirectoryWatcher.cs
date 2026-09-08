@@ -9,6 +9,7 @@ namespace FKP41
 {
     internal class DirectoryWatcher : IWatcher
     {
+        private const int DefaultTimeout = 1000;
         private DirectoryInfo _directory;
         public event PropertyChangedEventHandler? PropertyChanged;
         public string FilePath
@@ -24,7 +25,7 @@ namespace FKP41
                 bool token = false;
                 try
                 {
-                    spinLock.TryEnter(1000, ref token);
+                    spinLock.TryEnter(DefaultTimeout, ref token);
                     return this.status;
                 }
                 finally
@@ -41,7 +42,7 @@ namespace FKP41
                 bool token = false;
                 try
                 {
-                    spinLock.TryEnter(1000, ref token);
+                    spinLock.TryEnter(DefaultTimeout, ref token);
                     return lastBackupTime;
                 }
                 finally
@@ -58,7 +59,7 @@ namespace FKP41
                 bool token = false;
                 try
                 {
-                    spinLock.TryEnter(1000, ref token);
+                    spinLock.TryEnter(DefaultTimeout, ref token);
                     return fileCount;
                 }
                 finally
@@ -75,7 +76,7 @@ namespace FKP41
                 bool token = false;
                 try
                 {
-                    spinLock.TryEnter(1000, ref token);
+                    spinLock.TryEnter(DefaultTimeout, ref token);
                     return isEnable;
                 }
                 finally
@@ -89,7 +90,7 @@ namespace FKP41
                 bool isChenged = true;
                 try
                 {
-                    spinLock.TryEnter(1000, ref token);
+                    spinLock.TryEnter(DefaultTimeout, ref token);
                     if (this.isEnable != value)
                     {
                         this.isEnable = value;
@@ -142,7 +143,7 @@ namespace FKP41
             bool isChengedCount = false;
             try
             {
-                spinLock.TryEnter(1000, ref token);
+                spinLock.TryEnter(DefaultTimeout, ref token);
                 if (isEnable)
                 {
                     status = this.status;
