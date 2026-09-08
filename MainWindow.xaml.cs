@@ -18,9 +18,13 @@ namespace FKP41
     {
 
         private System.Collections.ObjectModel.ObservableCollection<WatcherViewModel> watcherViewModels;
+
+        #region Timer
+
         private System.Windows.Threading.DispatcherTimer renderTimer;
         private System.Windows.Threading.DispatcherTimer statusTimer;
         private Timer backupTimer;
+        #endregion
 
         public MainWindow()
         {
@@ -47,11 +51,15 @@ namespace FKP41
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             this.WatcherListView.ItemsSource = watcherViewModels;
-            this.renderTimer.Start();
-            this.statusTimer.Start();
-            this.backupTimer.Change(1000, 1000);
-
+            OnStartTimer();
             OnStatusUpdate(sender, e);
+
+            void OnStartTimer()
+            {
+                this.renderTimer.Start();
+                this.statusTimer.Start();
+                this.backupTimer.Change(1000, 1000);
+            }
         }
         protected override void OnClosed(EventArgs e)
         {
