@@ -40,6 +40,13 @@ namespace FKP41
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _watcher.FileCount;
         }
+        public bool IsEnable
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _watcher.IsEnable;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => _watcher.IsEnable = value;
+        }
 
         public WatcherViewModel(IWatcher watcher)
         {
@@ -67,6 +74,9 @@ namespace FKP41
                     break;
                 case nameof(IWatcher.FileCount):
                     NotifyPropertyChanged(nameof(FileCount));
+                    break;
+                case nameof(IWatcher.IsEnable):
+                    NotifyPropertyChanged(nameof(IsEnable));
                     break;
             }
         }
