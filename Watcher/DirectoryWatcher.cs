@@ -161,6 +161,8 @@ namespace FKP41
             try
             {
                 spinLock.TryEnter(DefaultTimeout, ref token);
+                if (this.status == WatcherStatus.Processing)
+                    return;
                 if (isEnable)
                 {
                     status = this.status;
