@@ -31,10 +31,10 @@
                         <GridViewColumnHeader Content="Files" />
                     </GridViewColumn>
                     <GridViewColumn>
-                        <GridViewColumnHeader Content="Enable" Tag="Chk" />
+                        <GridViewColumnHeader Content="Enable"/>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding Path=Chk}" />
+                                <CheckBox IsChecked="{Binding Path=IsEnable}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

@@ -48,6 +48,7 @@ namespace FKP41
         {
             this.WatcherListView.ItemsSource = watcherViewModels;
             this.renderTimer.Start();
+            this.statusTimer.Start();
             this.backupTimer.Change(1000, 1000);
 
             OnStatusUpdate(sender, e);
