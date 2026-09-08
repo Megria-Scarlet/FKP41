@@ -67,6 +67,53 @@ namespace FKP41
                 }
             }
         }
+        private bool isEnable;
+        public bool IsEnable
+        {
+            get
+            {
+                bool token = false;
+                try
+                {
+                    spinLock.TryEnter(1000, ref token);
+                    return isEnable;
+                }
+                finally
+                {
+                    if (token) spinLock.Exit();
+                }
+            }
+            set
+            {
+                bool token = false;
+                int isChenged = 0;
+                try
+                {
+                    spinLock.TryEnter(1000, ref token);
+                    if (this.isEnable != value)
+                    {
+                        this.isEnable = value;
+                        if (!value)
+                        {
+                            this.status = WatcherStatus.Invalid;
+                            isChenged = 2;
+                        }
+                        else
+                        {
+                            isChenged = 1;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (token) spinLock.Exit();
+                }
+                if (isChenged != 0)
+                    NotifyPropertyChanged(nameof(IsEnable));
+                if (isChenged == 2)
+                    NotifyPropertyChanged(nameof(Status));
+            }
+        }
 
         private SpinLock spinLock;
 
@@ -75,6 +122,7 @@ namespace FKP41
             _directory = new(path);
             this.status = WatcherStatus.Unknown;
             this.lastBackupTime = null;
+            this.isEnable = true;
             spinLock = new SpinLock();
         }
         // This method is called by the Set accessor of each property.
