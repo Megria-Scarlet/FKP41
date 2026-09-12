@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 
 namespace FKP41
 {
+    [JsonConverter(typeof(BackupDataJsonConverter))]
     public class BackupData
     {
         private DirectoryInfo backupDirectory;
@@ -64,37 +65,44 @@ namespace FKP41
         {
             if (reader.TokenType == JsonTokenType.StartObject)
             {
-                int indent = 0;
+                string? backupDirectory = null;
+
                 while (reader.Read())
                 {
                     switch (reader.TokenType)
                     {
                         case JsonTokenType.EndObject:
-                            if (indent <= 0)
-                                goto WHILEBREAK;
-                            continue;
-                        case JsonTokenType.StartObject:
-                            indent++;
-                            continue;
-                        case JsonTokenType.StartArray:
-                            reader.Skip();
-                            continue;
+                            goto WHILEBREAK;
                         case JsonTokenType.PropertyName:
                             string propertyName = reader.GetString() ?? string.Empty;
                             if (options.PropertyNameCaseInsensitive)
                             {
-
+                                if (string.Equals(propertyName, nameof(BackupData.BackupDirectory), StringComparison.OrdinalIgnoreCase))
+                                {
+                                    reader.Read();
+                                    backupDirectory = reader.GetString();
+                                }
                             }
                             else
                             {
-
+                                if (propertyName == nameof(BackupData.BackupDirectory))
+                                {
+                                    reader.Read();
+                                    backupDirectory = reader.GetString();
+                                }
                             }
                             break;
+                        default:
+                            reader.Skip();
+                            continue;
                     }
                 }
             WHILEBREAK:
-                ;
+
+                if (backupDirectory is not null)
+                    return new BackupData(new DirectoryInfo(backupDirectory));
             }
+            return null;
         }
 
         public override void Write(Utf8JsonWriter writer, BackupData value, JsonSerializerOptions options)
