@@ -16,11 +16,11 @@ namespace FKP41
         private uint maxBackupCount;
         private bool isValid;
 
-        public BackupData(DirectoryInfo backupDirectory)
+        public BackupData(DirectoryInfo backupDirectory, uint maxBackupCount, bool isValid)
         {
             this.backupDirectory = backupDirectory;
-            this.maxBackupCount = 10;
-            this.isValid = true;
+            this.maxBackupCount = maxBackupCount;
+            this.isValid = isValid;
             ReloadStorageData();
         }
 
@@ -35,6 +35,11 @@ namespace FKP41
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => backupDirectory;
+        }
+        public uint MaxBackupCount
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => maxBackupCount;
         }
         public void ReloadStorageData()
         {
@@ -66,6 +71,8 @@ namespace FKP41
             if (reader.TokenType == JsonTokenType.StartObject)
             {
                 string? backupDirectory = null;
+                uint maxBackupCount = 3;
+                bool isValid = true;
 
                 while (reader.Read())
                 {
@@ -74,22 +81,23 @@ namespace FKP41
                         case JsonTokenType.EndObject:
                             goto WHILEBREAK;
                         case JsonTokenType.PropertyName:
-                            string propertyName = reader.GetString() ?? string.Empty;
-                            if (options.PropertyNameCaseInsensitive)
+                            string? propertyName = reader.GetString();
+                            if (IsMatchPropertyName(propertyName, nameof(BackupData.BackupDirectory), options))
                             {
-                                if (string.Equals(propertyName, nameof(BackupData.BackupDirectory), StringComparison.OrdinalIgnoreCase))
-                                {
-                                    reader.Read();
-                                    backupDirectory = reader.GetString();
-                                }
+                                reader.Read();
+                                backupDirectory = reader.GetString();
                             }
-                            else
+                            else if (IsMatchPropertyName(propertyName, nameof(BackupData.MaxBackupCount), options))
                             {
-                                if (propertyName == nameof(BackupData.BackupDirectory))
-                                {
-                                    reader.Read();
-                                    backupDirectory = reader.GetString();
-                                }
+                                reader.Read();
+                                if (reader.TryGetUInt32(out uint u))
+                                    maxBackupCount = u;
+                            }
+                            else if (IsMatchPropertyName(propertyName, nameof(BackupData.IsValid), options))
+                            {
+                                reader.Read();
+                                if (reader.TokenType is JsonTokenType.True or JsonTokenType.False)
+                                    isValid = reader.GetBoolean();
                             }
                             break;
                         default:
@@ -100,7 +108,7 @@ namespace FKP41
             WHILEBREAK:
 
                 if (backupDirectory is not null)
-                    return new BackupData(new DirectoryInfo(backupDirectory));
+                    return new BackupData(new DirectoryInfo(backupDirectory), maxBackupCount, isValid);
             }
             return null;
         }
@@ -108,6 +116,17 @@ namespace FKP41
         public override void Write(Utf8JsonWriter writer, BackupData value, JsonSerializerOptions options)
         {
             throw new NotImplementedException();
+        }
+        private static bool IsMatchPropertyName([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] string? propertyName0, string propertyName1, JsonSerializerOptions? options)
+        {
+            if (options is null || !options.PropertyNameCaseInsensitive)
+            {
+                return propertyName0 == propertyName1;
+            }
+            else
+            {
+                return string.Equals(propertyName0, propertyName1, StringComparison.OrdinalIgnoreCase);
+            }
         }
     }
 }
