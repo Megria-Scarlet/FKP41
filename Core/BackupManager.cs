@@ -31,16 +31,21 @@ namespace FKP41
             }
             else
             {
-                string s1;
-                do
-                {
-                    s1 = Path.Combine(rootBackupDirectory, Guid.NewGuid().ToString("N"));
-                }
-                while (Directory.Exists(s1));
-                backupPairs.Add(path, s1);
-                SaveIndexFile();
-                return s1;
+                return Register(path);
             }
+        }
+
+        private string Register(string path)
+        {
+            string s;
+            do
+            {
+                s = Path.Combine(rootBackupDirectory, Guid.NewGuid().ToString("N"));
+            }
+            while (Directory.Exists(s));
+            backupPairs.Add(path, s);
+            SaveIndexFile();
+            return s;
         }
 
         [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs))]
@@ -62,6 +67,12 @@ namespace FKP41
                 try
                 {
                     backupPairs = JsonSerializer.Deserialize<Dictionary<string, string>>(fileStream, GetJsonOptions())!;
+
+                    foreach (var pair in backupPairs)
+                    {
+                        BackupData backupData = new(new(pair.Value));
+                        _ = backupData;
+                    }
                 }
                 catch (JsonException)
                 {
