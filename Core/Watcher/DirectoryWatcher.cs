@@ -228,7 +228,7 @@ namespace FKP41
             }
             NotifyPropertyChanged(nameof(Status));
 
-            DirectoryInfo directory = new(backupManager.GetBackupDirectory(FilePath));
+            DirectoryInfo directory = backupManager.GetBackupDirectory(FilePath);
             if (!directory.Exists)
                 directory.Create();
             string archiveName = Path.Combine(directory.FullName, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".zip");
