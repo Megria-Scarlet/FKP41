@@ -16,6 +16,7 @@ namespace FKP41
         private uint maxBackupCount;
         private bool isValid;
 
+        public BackupData(DirectoryInfo backupDirectory) : this(backupDirectory, 3, true) { }
         public BackupData(DirectoryInfo backupDirectory, uint maxBackupCount, bool isValid)
         {
             this.backupDirectory = backupDirectory;
@@ -110,13 +111,30 @@ namespace FKP41
                 if (backupDirectory is not null)
                     return new BackupData(new DirectoryInfo(backupDirectory), maxBackupCount, isValid);
             }
+            else if (reader.TokenType == JsonTokenType.String)
+            {
+                string? backupDirectory = reader.GetString();
+                if (!string.IsNullOrWhiteSpace(backupDirectory))
+                {
+                    return new BackupData(new DirectoryInfo(backupDirectory));
+                }
+            }
             return null;
         }
 
         public override void Write(Utf8JsonWriter writer, BackupData value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            writer.WriteStartObject();
+            writer.WriteString(nameof(BackupData.BackupDirectory), value.BackupDirectory.FullName);
+            writer.WriteNumber(nameof(BackupData.MaxBackupCount), value.MaxBackupCount);
+            if (!value.IsValid)
+            {
+                writer.WriteBoolean(nameof(BackupData.IsValid), false);
+            }
+            writer.WriteEndObject();
         }
+
+
         private static bool IsMatchPropertyName([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] string? propertyName0, string propertyName1, JsonSerializerOptions? options)
         {
             if (options is null || !options.PropertyNameCaseInsensitive)
