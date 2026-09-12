@@ -10,7 +10,7 @@ namespace FKP41
     {
         private ObservableObject<string> rootBackupDirectory;
         private bool disposedValue;
-        private Dictionary<string, string> backupPairs;
+        private Dictionary<string, BackupData> backupPairs;
 
         public BackupManager(string rootBackupDirectory) : this(new ObservableObject<string>(rootBackupDirectory))
         {
@@ -21,21 +21,23 @@ namespace FKP41
             this.rootBackupDirectory = rootBackupDirectory;
             this.rootBackupDirectory.PropertyChanged += OnRootBackupDirectoryChanged;
             OnRootBackupDirectoryChanged();
+            _ = this;
         }
 
-        public string GetBackupDirectory(string path)
+        public DirectoryInfo GetBackupDirectory(string path)
         {
-            if (backupPairs.TryGetValue(path, out string? s))
+            if (backupPairs.TryGetValue(path, out BackupData? backupData))
             {
-                return s;
+                if (backupData is not null)
+                {
+                    return backupData.BackupDirectory;
+                }
+                backupPairs.Remove(path);
             }
-            else
-            {
-                return Register(path);
-            }
+            return Register(path).BackupDirectory;
         }
 
-        private string Register(string path)
+        private BackupData Register(string path)
         {
             string s;
             do
@@ -43,9 +45,10 @@ namespace FKP41
                 s = Path.Combine(rootBackupDirectory, Guid.NewGuid().ToString("N"));
             }
             while (Directory.Exists(s));
-            backupPairs.Add(path, s);
+            BackupData backupData = new(new(s));
+            backupPairs.Add(path, backupData);
             SaveIndexFile();
-            return s;
+            return backupData;
         }
 
         [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs))]
@@ -66,13 +69,7 @@ namespace FKP41
                 using FileStream fileStream = file.OpenRead();
                 try
                 {
-                    backupPairs = JsonSerializer.Deserialize<Dictionary<string, string>>(fileStream, GetJsonOptions())!;
-
-                    foreach (var pair in backupPairs)
-                    {
-                        BackupData backupData = new(new(pair.Value));
-                        _ = backupData;
-                    }
+                    backupPairs = JsonSerializer.Deserialize<Dictionary<string, BackupData>>(fileStream, GetJsonOptions())!;
                 }
                 catch (JsonException)
                 {
