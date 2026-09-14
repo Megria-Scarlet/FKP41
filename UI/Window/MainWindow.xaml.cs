@@ -35,17 +35,16 @@ namespace FKP41
 
         public MainWindow()
         {
+            // 例外が処理されなかったら発生する（.NET 1.0 より）
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
             InitializeComponent();
             this.Loaded += OnLoaded;
             backupPath = new(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(App.DllFilePath)!, "backup"));
             backupManager = new(backupPath);
 
-            watcherViewModels = [];
-            watcherViewModels =
-                [
-                    //new(new DirectoryWatcher(string.Empty)),
-                    new(new DirectoryWatcher(Environment.CurrentDirectory, backupManager))
-                ];
+            watcherViewModels = [.. backupManager.CreateWatchers().Select(x => new WatcherViewModel(x))];
+            
             renderTimer = new(System.Windows.Threading.DispatcherPriority.Render)
             {
                 Interval = TimeSpan.FromTicks(TimeSpan.TicksPerMillisecond * 10)
@@ -57,6 +56,9 @@ namespace FKP41
             };
             statusTimer.Tick += OnStatusUpdate;
             backupTimer = new(OnAutoBackup);
+
+            // Title の設定
+            Title = $"{Title} ver.{App.MyFileVersionInfo.FileMajorPart}.{App.MyFileVersionInfo.FileMinorPart}.{App.MyFileVersionInfo.FileBuildPart}.{App.MyFileVersionInfo.FilePrivatePart}";
         }
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
@@ -83,6 +85,57 @@ namespace FKP41
             renderTimer.Stop();
             backupTimer.Dispose();
         }
+
+
+        /// <summary>
+        /// 最終的に処理されなかった未処理例外を処理します。
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Exception? exception = e.ExceptionObject as Exception;
+            while (exception?.InnerException != null)
+                exception = exception.InnerException;
+            var message = $"予期せぬエラーが発生しました。続けて発生する場合は開発者に報告してください。";
+            if (exception != null) message += $"\n({exception.Message} @ {exception.TargetSite?.Name ?? "null"})";
+            try
+            {
+                string errerPath = $"{System.IO.Path.GetDirectoryName(App.DllFilePath)}\\ErrerLog\\{DateTime.Now:yyyy-MM-dd-HHmmss}.txt";
+                string? d = System.IO.Path.GetDirectoryName(errerPath);
+                if (!string.IsNullOrEmpty(d))
+                {
+                    System.IO.DirectoryInfo directoryInfo = new(d);
+                    if (!directoryInfo.Exists)
+                    {
+                        directoryInfo.Create();
+                    }
+                }
+                using System.IO.FileStream fileStream = new(errerPath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite);
+                System.Text.UTF8Encoding encoding = new(false);
+                using System.IO.StreamWriter writer = new(fileStream, encoding);
+                if (exception != null)
+                {
+                    writer.WriteLine(exception.ToString());
+                }
+                else
+                {
+                    writer.WriteLine("詳細不明なエラーが発生しました。");
+                }
+            }
+            catch (Exception e2)
+            {
+                System.Diagnostics.Debug.WriteLine(e2.ToString());
+            }
+            // Logger.Fatal("未処理例外", exception); // 適当なログ記録
+            MessageBox.Show(message, "未処理例外", MessageBoxButton.OK, MessageBoxImage.Stop);
+#if DEBUG
+
+#else
+            Environment.Exit(1);
+#endif
+        }
+
         private void OnRenderUpdate(object? sender, EventArgs e)
         {
             foreach (var watcher in watcherViewModels)
