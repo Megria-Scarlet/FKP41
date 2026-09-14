@@ -87,15 +87,20 @@ namespace FKP41
         }
         private void SaveIndexFile()
         {
-            var file = GetIndexFile();
-            var directory = file.Directory;
+            var oldFile = GetIndexFile();
+            var directory = oldFile.Directory;
             if (!directory!.Exists)
             {
                 directory.Create();
             }
-            using FileStream fileStream = file.Open(FileMode.OpenOrCreate, FileAccess.Write);
+
+            FileInfo newFile = new(Path.ChangeExtension(oldFile.FullName, "tmp"));
+            FileStream fileStream = newFile.Open(FileMode.OpenOrCreate, FileAccess.Write);
             fileStream.SetLength(0);
             JsonSerializer.Serialize(fileStream, backupPairs, GetJsonOptions());
+
+            oldFile.MoveTo($"{Path.GetFileNameWithoutExtension(oldFile.FullName)}_1.json", true);
+            newFile.MoveTo(Path.ChangeExtension(newFile.FullName, "json"), true);
         }
         private FileInfo GetIndexFile()
         {
