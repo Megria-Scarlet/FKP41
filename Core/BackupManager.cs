@@ -23,18 +23,22 @@ namespace FKP41
             OnRootBackupDirectoryChanged();
             _ = this;
         }
-
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public DirectoryInfo GetBackupDirectory(string path)
+        {
+            return GetBackupData(path).BackupDirectory;
+        }
+        public BackupData GetBackupData(string path)
         {
             if (backupPairs.TryGetValue(path, out BackupData? backupData))
             {
                 if (backupData is not null)
                 {
-                    return backupData.BackupDirectory;
+                    return backupData;
                 }
                 backupPairs.Remove(path);
             }
-            return Register(path).BackupDirectory;
+            return Register(path);
         }
 
         private BackupData Register(string path)
