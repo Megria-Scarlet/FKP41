@@ -12,6 +12,7 @@ namespace FKP41
         private const int DefaultTimeout = 1000;
         private DirectoryInfo _directory;
         private BackupManager backupManager;
+        private BackupData backupData;
         public event PropertyChangedEventHandler? PropertyChanged;
         public string FilePath
         {
@@ -104,6 +105,22 @@ namespace FKP41
                             this.status = WatcherStatus.Accepted;
                         }
                         isChenged = true;
+
+                        if (backupData.IsValid != this.isEnable)
+                        {
+                            if (backupData is BackupDataCache cache)
+                            {
+                                cache.IsValid = this.isEnable;
+                            }
+                            else
+                            {
+                                cache = new BackupDataCache(backupData)
+                                {
+                                    IsValid = this.isEnable
+                                };
+                                backupData = cache;
+                            }
+                        }
                     }
                 }
                 finally
@@ -141,10 +158,11 @@ namespace FKP41
         {
             _directory = new(path);
             this.status = WatcherStatus.Unknown;
-            this.lastBackupTime = null;
             this.isEnable = true;
             spinLock = new SpinLock();
             this.backupManager = backupManager;
+            this.backupData = backupManager.GetBackupData(path);
+            this.lastBackupTime = this.backupData.LastBackupTime;
         }
         // This method is called by the Set accessor of each property.
         // The CallerMemberName attribute that is applied to the optional propertyName
@@ -290,6 +308,32 @@ namespace FKP41
             ref char reference = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(input);
             reference = ref System.Runtime.CompilerServices.Unsafe.Add(ref reference, i);
             return System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref reference, input.Length - i);
+        }
+
+        private class BackupDataCache : BackupData
+        {
+            private readonly BackupData baseBackupData;
+            public BackupDataCache(BackupData baseBackupData) : base(baseBackupData.BackupDirectory, baseBackupData.MaxBackupCount, baseBackupData.IsValid)
+            {
+                this.baseBackupData = baseBackupData;
+            }
+            public bool IsChanged
+            {
+                get
+                {
+                    if (this.isValid != baseBackupData.IsValid || this.maxBackupCount != baseBackupData.MaxBackupCount || !string.Equals(this.backupDirectory.FullName, baseBackupData.BackupDirectory.FullName, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    else if (this.lastBackupTime != baseBackupData.LastBackupTime)
+                    {
+                        baseBackupData.ReloadStorageData();
+                        if (this.lastBackupTime != baseBackupData.LastBackupTime)
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
         }
     }
 }
