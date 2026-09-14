@@ -11,10 +11,10 @@ namespace FKP41
     [JsonConverter(typeof(BackupDataJsonConverter))]
     public class BackupData
     {
-        private DirectoryInfo backupDirectory;
-        private DateTime? lastBackupTime;
-        private uint maxBackupCount;
-        private bool isValid;
+        protected DirectoryInfo backupDirectory;
+        protected DateTime? lastBackupTime;
+        protected uint maxBackupCount;
+        protected bool isValid;
 
         public BackupData(DirectoryInfo backupDirectory) : this(backupDirectory, 3, true) { }
         public BackupData(DirectoryInfo backupDirectory, uint maxBackupCount, bool isValid)
@@ -41,6 +41,11 @@ namespace FKP41
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => maxBackupCount;
+        }
+        public DateTime? LastBackupTime
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => lastBackupTime;
         }
         public void ReloadStorageData()
         {
