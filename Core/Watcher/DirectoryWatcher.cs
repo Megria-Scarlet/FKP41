@@ -154,14 +154,18 @@ namespace FKP41
 
         private SpinLock spinLock;
 
-        public DirectoryWatcher(string path, BackupManager backupManager)
+        public DirectoryWatcher(string path, BackupManager backupManager) : this(path, backupManager, backupManager.GetBackupData(path))
+        {
+
+        }
+        public DirectoryWatcher(string path, BackupManager backupManager, BackupData backupData)
         {
             _directory = new(path);
             this.status = WatcherStatus.Unknown;
             this.isEnable = true;
             spinLock = new SpinLock();
             this.backupManager = backupManager;
-            this.backupData = backupManager.GetBackupData(path);
+            this.backupData = backupData;
             this.lastBackupTime = this.backupData.LastBackupTime;
         }
         // This method is called by the Set accessor of each property.
