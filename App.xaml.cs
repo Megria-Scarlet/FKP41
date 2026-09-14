@@ -15,6 +15,10 @@ namespace FKP41
             [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
             get => dllFilePath;
         }
+        public static System.Diagnostics.FileVersionInfo MyFileVersionInfo =>
+                //自分自身のバージョン情報を取得する
+                System.Diagnostics.FileVersionInfo.GetVersionInfo(
+                    System.Reflection.Assembly.GetExecutingAssembly().Location);
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
