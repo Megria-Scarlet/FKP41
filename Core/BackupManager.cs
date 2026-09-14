@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 
@@ -11,6 +12,7 @@ namespace FKP41
         private ObservableObject<string> rootBackupDirectory;
         private bool disposedValue;
         private Dictionary<string, BackupData> backupPairs;
+        private List<string> indexes;
 
         public BackupManager(string rootBackupDirectory) : this(new ObservableObject<string>(rootBackupDirectory))
         {
@@ -23,7 +25,7 @@ namespace FKP41
             OnRootBackupDirectoryChanged();
             _ = this;
         }
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DirectoryInfo GetBackupDirectory(string path)
         {
             return GetBackupData(path).BackupDirectory;
@@ -60,7 +62,7 @@ namespace FKP41
         {
             OnRootBackupDirectoryChanged();
         }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs))]
+        [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs), nameof(indexes))]
         private void OnRootBackupDirectoryChanged()
         {
 #pragma warning disable CS8774 // 終了時にメンバーには null 以外の値が含まれている必要があります。
@@ -73,16 +75,20 @@ namespace FKP41
                 using FileStream fileStream = file.OpenRead();
                 try
                 {
-                    backupPairs = JsonSerializer.Deserialize<Dictionary<string, BackupData>>(fileStream, GetJsonOptions())!;
+                    var pairs = JsonSerializer.Deserialize<Dictionary<string, BackupData>>(fileStream, GetJsonOptions())!;
+                    indexes = [.. pairs.Select(x => x.Key)];
+                    backupPairs = pairs; //pairs.ToDictionary();
                 }
                 catch (JsonException)
                 {
                     backupPairs = [];
+                    indexes = [];
                 }
             }
             else
             {
                 backupPairs = [];
+                indexes = [];
             }
         }
         private void SaveIndexFile()
@@ -98,6 +104,7 @@ namespace FKP41
             FileStream fileStream = newFile.Open(FileMode.OpenOrCreate, FileAccess.Write);
             fileStream.SetLength(0);
             JsonSerializer.Serialize(fileStream, backupPairs, GetJsonOptions());
+            fileStream.Dispose();
 
             oldFile.MoveTo($"{Path.GetFileNameWithoutExtension(oldFile.FullName)}_1.json", true);
             newFile.MoveTo(Path.ChangeExtension(newFile.FullName, "json"), true);
@@ -127,6 +134,12 @@ namespace FKP41
             {
                 return files;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal IEnumerable<DirectoryWatcher> CreateWatchers()
+        {
+            return indexes.Select(x => new DirectoryWatcher(x, this, backupPairs[x]));
         }
 
         #region Dispose
