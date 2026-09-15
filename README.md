@@ -3,7 +3,7 @@
 [![License:MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![.NET 10.0](https://img.shields.io/badge/.NET-10.0-purple.svg)
 ![OS:Windows](https://img.shields.io/badge/OS-Windows-blue.svg)
-![ver.0.0](https://img.shields.io/badge/Release-ver.0.0β-red.svg)
+![ver.0.0](https://img.shields.io/badge/Release-ver.0.0.1β-red.svg)
 
 制作: Megria  
 GitHub: <https://github.com/Megria-Scarlet/FKP41>  
