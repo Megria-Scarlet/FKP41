@@ -47,6 +47,11 @@ namespace FKP41
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => _watcher.IsEnable = value;
         }
+        public BackupOptionsData BackupData
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _watcher.BackupData;
+        }
 
         public long RawByteSize
         {

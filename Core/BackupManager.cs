@@ -11,7 +11,7 @@ namespace FKP41
     {
         private ObservableObject<string> rootBackupDirectory;
         private bool disposedValue;
-        private Dictionary<string, BackupData> backupPairs;
+        private Dictionary<string, BackupOptionsData> backupPairs;
         private List<string> indexes;
         private bool isChengedBackupPairs;
 
@@ -38,9 +38,9 @@ namespace FKP41
         {
             return GetBackupData(path).BackupDirectory;
         }
-        public BackupData GetBackupData(string path)
+        public BackupOptionsData GetBackupData(string path)
         {
-            if (backupPairs.TryGetValue(path, out BackupData? backupData))
+            if (backupPairs.TryGetValue(path, out BackupOptionsData? backupData))
             {
                 if (backupData is not null)
                 {
@@ -51,7 +51,7 @@ namespace FKP41
             return Register(path);
         }
 
-        private BackupData Register(string path)
+        private BackupOptionsData Register(string path)
         {
             string s;
             do
@@ -59,7 +59,7 @@ namespace FKP41
                 s = Path.Combine(rootBackupDirectory, Guid.NewGuid().ToString("N"));
             }
             while (Directory.Exists(s));
-            BackupData backupData = new(new DirectoryInfo(s));
+            BackupOptionsData backupData = new(new DirectoryInfo(s));
             backupPairs.Add(path, backupData);
             SaveIndexFile();
             return backupData;
@@ -83,7 +83,7 @@ namespace FKP41
                 using FileStream fileStream = file.OpenRead();
                 try
                 {
-                    var pairs = JsonSerializer.Deserialize<Dictionary<string, BackupData>>(fileStream, GetJsonOptions())!;
+                    var pairs = JsonSerializer.Deserialize<Dictionary<string, BackupOptionsData>>(fileStream, GetJsonOptions())!;
                     indexes = [.. pairs.Select(x => x.Key)];
                     backupPairs = pairs; //pairs.ToDictionary();
                 }
@@ -134,13 +134,13 @@ namespace FKP41
         }
 
         /// <summary>
-        /// 指定したファイルパスの <see cref="BackupData"/> を設定します。
+        /// 指定したファイルパスの <see cref="BackupOptionsData"/> を設定します。
         /// </summary>
         /// <param name="filePath">ファイルパス。</param>
-        /// <param name="backupData">設定する <see cref="BackupData"/> 型のオブジェクト。</param>
+        /// <param name="backupData">設定する <see cref="BackupOptionsData"/> 型のオブジェクト。</param>
         /// <param name="isAdd">ファイルパスが存在しない場合、新規に追加する場合は <see langword="true"/> 。</param>
         /// <returns>正常に設定できた場合は <see langword="true"/> 。</returns>
-        public bool SetBackupData(string filePath, BackupData backupData, bool isAdd = true)
+        public bool SetBackupData(string filePath, BackupOptionsData backupData, bool isAdd = true)
         {
             if (backupPairs.TryGetValue(filePath, out var value))
             {
@@ -163,6 +163,22 @@ namespace FKP41
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// このオブジェクトが保持する <see cref="BackupOptionsData"/> 型のオブジェクトを、
+        /// <see cref="IWatcher"/> オブジェクトに関連付けされている <see cref="BackupOptionsData"/> 型のオブジェクトに更新します。
+        /// </summary>
+        /// <param name="watchers"></param>
+        /// <returns>いずれかの <see cref="BackupOptionsData"/> 型のオブジェクトを更新した場合は <see langword="true"/> 。</returns>
+        public bool OnUpdateBackupData(IEnumerable<IWatcher> watchers)
+        {
+            bool result = false;
+            foreach (var watcher in watchers)
+            {
+                result |= SetBackupData(watcher.FilePath, watcher.BackupData, false);
+            }
+            return result;
         }
 
         private static JsonSerializerOptions GetJsonOptions()

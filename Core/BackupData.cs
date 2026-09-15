@@ -9,22 +9,22 @@ using System.Text.Json.Serialization;
 namespace FKP41
 {
     [JsonConverter(typeof(BackupDataJsonConverter))]
-    public partial class BackupData : IEquatable<BackupData>, System.Numerics.IEqualityOperators<BackupData, BackupData, bool>
+    public partial class BackupOptionsData : IEquatable<BackupOptionsData>, System.Numerics.IEqualityOperators<BackupOptionsData, BackupOptionsData, bool>
     {
         protected DirectoryInfo backupDirectory;
         protected DateTime? lastBackupTime;
         protected uint maxBackupCount;
         protected bool isValid;
 
-        public BackupData(DirectoryInfo backupDirectory) : this(backupDirectory, 3, true) { }
-        public BackupData(DirectoryInfo backupDirectory, uint maxBackupCount, bool isValid)
+        public BackupOptionsData(DirectoryInfo backupDirectory) : this(backupDirectory, 3, true) { }
+        public BackupOptionsData(DirectoryInfo backupDirectory, uint maxBackupCount, bool isValid)
         {
             this.backupDirectory = backupDirectory;
             this.maxBackupCount = maxBackupCount;
             this.isValid = isValid;
             ReloadStorageData();
         }
-        public BackupData(BackupData backupData)
+        public BackupOptionsData(BackupOptionsData backupData)
         {
             this.backupDirectory = backupData.backupDirectory;
             this.maxBackupCount = backupData.maxBackupCount;
@@ -56,14 +56,14 @@ namespace FKP41
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool Equals(object? obj) => Equals(obj as BackupData);
+        public override bool Equals(object? obj) => Equals(obj as BackupOptionsData);
 
-        public virtual bool Equals(BackupData? other)
+        public virtual bool Equals(BackupOptionsData? other)
         {
             return other is not null && other.GetType() == this.GetType() && ValueEquals(other, this);
         }
 
-        protected static bool ValueEquals(BackupData value1, BackupData value2)
+        protected static bool ValueEquals(BackupOptionsData value1, BackupOptionsData value2)
         {
             return value1.isValid == value2.isValid
                    && value1.maxBackupCount == value2.maxBackupCount
@@ -145,12 +145,12 @@ namespace FKP41
             return backupDirectory.EnumerateFiles("*.zip", SearchOption.TopDirectoryOnly).Where(x => regex.IsMatch(Path.GetFileNameWithoutExtension(x.Name)));
         }
 
-        public static bool operator ==(BackupData? left, BackupData? right)
+        public static bool operator ==(BackupOptionsData? left, BackupOptionsData? right)
         {
-            return EqualityComparer<BackupData>.Default.Equals(left, right);
+            return EqualityComparer<BackupOptionsData>.Default.Equals(left, right);
         }
 
-        public static bool operator !=(BackupData? left, BackupData? right)
+        public static bool operator !=(BackupOptionsData? left, BackupOptionsData? right)
         {
             return !(left == right);
         }
@@ -158,9 +158,9 @@ namespace FKP41
         [System.Text.RegularExpressions.GeneratedRegex(@"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$")]
         public static partial System.Text.RegularExpressions.Regex BackupFileRegex();
     }
-    public class BackupDataJsonConverter : JsonConverter<BackupData>
+    public class BackupDataJsonConverter : JsonConverter<BackupOptionsData>
     {
-        public override BackupData? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override BackupOptionsData? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType == JsonTokenType.StartObject)
             {
@@ -176,18 +176,18 @@ namespace FKP41
                             goto WHILEBREAK;
                         case JsonTokenType.PropertyName:
                             string? propertyName = reader.GetString();
-                            if (IsMatchPropertyName(propertyName, nameof(BackupData.BackupDirectory), options))
+                            if (IsMatchPropertyName(propertyName, nameof(BackupOptionsData.BackupDirectory), options))
                             {
                                 reader.Read();
                                 backupDirectory = reader.GetString();
                             }
-                            else if (IsMatchPropertyName(propertyName, nameof(BackupData.MaxBackupCount), options))
+                            else if (IsMatchPropertyName(propertyName, nameof(BackupOptionsData.MaxBackupCount), options))
                             {
                                 reader.Read();
                                 if (reader.TryGetUInt32(out uint u))
                                     maxBackupCount = u;
                             }
-                            else if (IsMatchPropertyName(propertyName, nameof(BackupData.IsValid), options))
+                            else if (IsMatchPropertyName(propertyName, nameof(BackupOptionsData.IsValid), options))
                             {
                                 reader.Read();
                                 if (reader.TokenType is JsonTokenType.True or JsonTokenType.False)
@@ -202,27 +202,27 @@ namespace FKP41
             WHILEBREAK:
 
                 if (backupDirectory is not null)
-                    return new BackupData(new DirectoryInfo(backupDirectory), maxBackupCount, isValid);
+                    return new BackupOptionsData(new DirectoryInfo(backupDirectory), maxBackupCount, isValid);
             }
             else if (reader.TokenType == JsonTokenType.String)
             {
                 string? backupDirectory = reader.GetString();
                 if (!string.IsNullOrWhiteSpace(backupDirectory))
                 {
-                    return new BackupData(new DirectoryInfo(backupDirectory));
+                    return new BackupOptionsData(new DirectoryInfo(backupDirectory));
                 }
             }
             return null;
         }
 
-        public override void Write(Utf8JsonWriter writer, BackupData value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, BackupOptionsData value, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString(nameof(BackupData.BackupDirectory), value.BackupDirectory.FullName);
-            writer.WriteNumber(nameof(BackupData.MaxBackupCount), value.MaxBackupCount);
+            writer.WriteString(nameof(BackupOptionsData.BackupDirectory), value.BackupDirectory.FullName);
+            writer.WriteNumber(nameof(BackupOptionsData.MaxBackupCount), value.MaxBackupCount);
             if (!value.IsValid)
             {
-                writer.WriteBoolean(nameof(BackupData.IsValid), false);
+                writer.WriteBoolean(nameof(BackupOptionsData.IsValid), false);
             }
             writer.WriteEndObject();
         }

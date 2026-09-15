@@ -12,7 +12,12 @@ namespace FKP41
         private const int DefaultTimeout = 1000;
         private DirectoryInfo _directory;
         private BackupManager backupManager;
-        private BackupData backupData;
+        private BackupOptionsData backupData;
+        public BackupOptionsData BackupData
+        {
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            get => backupData;
+        }
         public event PropertyChangedEventHandler? PropertyChanged;
         public string FilePath
         {
@@ -158,11 +163,11 @@ namespace FKP41
         {
 
         }
-        public DirectoryWatcher(string path, BackupManager backupManager, BackupData backupData)
+        public DirectoryWatcher(string path, BackupManager backupManager, BackupOptionsData backupData)
         {
             _directory = new(path);
             this.status = WatcherStatus.Unknown;
-            this.isEnable = true;
+            this.isEnable = backupData.IsValid;
             spinLock = new SpinLock();
             this.backupManager = backupManager;
             this.backupData = backupData;
@@ -211,7 +216,7 @@ namespace FKP41
                 {
                     if (backupDataCache.IsChanged)
                     {
-                        BackupData backupData = backupDataCache.Clone();
+                        BackupOptionsData backupData = backupDataCache.Clone();
                         if (backupManager.SetBackupData(FilePath, backupData))
                         {
                             this.backupData = backupData;
@@ -314,6 +319,7 @@ namespace FKP41
             }
             return false;
         }
+        [Obsolete]
         private static ReadOnlySpan<char> StartExtract(ReadOnlySpan<char> input, ReadOnlySpan<char> extruct)
         {
             int i = 0;
@@ -333,10 +339,10 @@ namespace FKP41
             return System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref reference, input.Length - i);
         }
 
-        private class BackupDataCache : BackupData, ICloneable
+        private class BackupDataCache : BackupOptionsData, ICloneable
         {
-            private readonly BackupData baseBackupData;
-            public BackupDataCache(BackupData baseBackupData) : base(baseBackupData)
+            private readonly BackupOptionsData baseBackupData;
+            public BackupDataCache(BackupOptionsData baseBackupData) : base(baseBackupData)
             {
                 this.baseBackupData = baseBackupData;
             }
@@ -347,7 +353,7 @@ namespace FKP41
                     return !ValueEquals(this, baseBackupData);
                 }
             }
-            public BackupData Clone() => new(this);
+            public BackupOptionsData Clone() => new(this);
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             object ICloneable.Clone() => Clone();
         }

@@ -88,6 +88,11 @@ namespace FKP41
             base.OnClosed(e);
             renderTimer.Stop();
             backupTimer.Dispose();
+
+            if (backupManager.IsChengedBackupPairs || backupManager.OnUpdateBackupData(watcherViewModels))
+            {
+                backupManager.SaveIndexFile();
+            }
         }
 
 
