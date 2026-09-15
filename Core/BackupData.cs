@@ -124,7 +124,7 @@ namespace FKP41
             }
         }
 
-        public void CreateBackup(DateTime createTime, IEnumerable<(string filePath, string archivePath)> files)
+        public void CreateBackupArchive(DateTime createTime, IEnumerable<(string filePath, string archivePath)> files)
         {
             if (!backupDirectory.Exists)
                 backupDirectory.Create();
