@@ -101,13 +101,22 @@ namespace FKP41
             }
 
             FileInfo newFile = new(Path.ChangeExtension(oldFile.FullName, "tmp"));
-            FileStream fileStream = newFile.Open(FileMode.OpenOrCreate, FileAccess.Write);
-            fileStream.SetLength(0);
+            FileStream fileStream;
+            if (newFile.Exists)
+            {
+                fileStream = newFile.OpenWrite();
+                fileStream.SetLength(0);
+            }
+            else
+            {
+                fileStream = newFile.Create();
+            }
             JsonSerializer.Serialize(fileStream, backupPairs, GetJsonOptions());
             fileStream.Dispose();
 
             oldFile.MoveTo($"{Path.GetFileNameWithoutExtension(oldFile.FullName)}_1.json", true);
             newFile.MoveTo(Path.ChangeExtension(newFile.FullName, "json"), true);
+            _ = newFile;
         }
         private FileInfo GetIndexFile()
         {
