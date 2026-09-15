@@ -15,6 +15,12 @@ namespace FKP41
         private List<string> indexes;
         private bool isChengedBackupPairs;
 
+        public bool IsChengedBackupPairs
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => isChengedBackupPairs;
+        }
+
         public BackupManager(string rootBackupDirectory) : this(new ObservableObject<string>(rootBackupDirectory))
         {
 
