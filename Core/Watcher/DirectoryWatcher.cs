@@ -262,6 +262,10 @@ namespace FKP41
             }
             NotifyPropertyChanged(nameof(Status));
 
+            IEnumerable<FileInfo> files = backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories));
+            IEnumerable<(FileInfo, string)> keyPi = files.Select(f => (f, Path.GetRelativePath(_directory.FullName, f.FullName)));
+            backupData.CreateBackup(DateTime.Now, keyPi);
+            /*
             DirectoryInfo directory = backupManager.GetBackupDirectory(FilePath);
             if (!directory.Exists)
                 directory.Create();
@@ -276,6 +280,7 @@ namespace FKP41
                 _ = System.IO.Compression.ZipFileExtensions.CreateEntryFromFile(archive, file.FullName, p, System.IO.Compression.CompressionLevel.SmallestSize);
             }
             archive.Dispose();
+            */
 
             backupData.DeleteMostOldBackupFiles(1, true);
 
