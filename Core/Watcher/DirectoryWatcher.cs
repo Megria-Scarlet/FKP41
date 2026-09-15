@@ -263,8 +263,8 @@ namespace FKP41
             NotifyPropertyChanged(nameof(Status));
 
             IEnumerable<FileInfo> files = backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories));
-            IEnumerable<(FileInfo, string)> keyPi = files.Select(f => (f, Path.GetRelativePath(_directory.FullName, f.FullName)));
-            backupData.CreateBackup(DateTime.Now, keyPi);
+            IEnumerable<(string, string)> archivePair = files.Select(f => (f.FullName, Path.Combine(_directory.Name, Path.GetRelativePath(_directory.FullName, f.FullName))));
+            backupData.CreateBackup(DateTime.Now, archivePair);
             /*
             DirectoryInfo directory = backupManager.GetBackupDirectory(FilePath);
             if (!directory.Exists)
