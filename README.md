@@ -28,8 +28,11 @@ GitHub: <https://github.com/Megria-Scarlet/FKP41>
 
 ## 更新履歴
 
-* ver.0.0β (2026/09/08)
+* ver.0.0.0 (2026/09/08)
 
   * `README.md` ファイルを作成
+* ver.0.0.1-β (2026/09/15)
+
+  * とりあえずビルド
 
 [link-twitter]:https://x.com/Megria1201
