@@ -206,6 +206,14 @@ namespace FKP41
                     }
                     isChangedStatus = status != this.status;
                 }
+                // BackupData がキャッシュの場合は更新
+                if (this.backupData is BackupDataCache backupDataCache)
+                {
+                    if (backupDataCache.IsChanged)
+                    {
+
+                    }
+                }
             }
             catch
             {
@@ -314,10 +322,10 @@ namespace FKP41
             return System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref reference, input.Length - i);
         }
 
-        private class BackupDataCache : BackupData
+        private class BackupDataCache : BackupData, ICloneable
         {
             private readonly BackupData baseBackupData;
-            public BackupDataCache(BackupData baseBackupData) : base(baseBackupData.BackupDirectory, baseBackupData.MaxBackupCount, baseBackupData.IsValid)
+            public BackupDataCache(BackupData baseBackupData) : base(baseBackupData)
             {
                 this.baseBackupData = baseBackupData;
             }
@@ -325,8 +333,10 @@ namespace FKP41
             {
                 get
                 {
-                    if (this.isValid != baseBackupData.IsValid || this.maxBackupCount != baseBackupData.MaxBackupCount || !string.Equals(this.backupDirectory.FullName, baseBackupData.BackupDirectory.FullName, StringComparison.OrdinalIgnoreCase))
-                        return true;
+                    if (ValueEquals(this, baseBackupData))
+                    {
+                        return false;
+                    }
                     else if (this.lastBackupTime != baseBackupData.LastBackupTime)
                     {
                         baseBackupData.ReloadStorageData();
@@ -338,6 +348,9 @@ namespace FKP41
                     return false;
                 }
             }
+            public BackupData Clone() => new(this);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            object ICloneable.Clone() => Clone();
         }
     }
 }
