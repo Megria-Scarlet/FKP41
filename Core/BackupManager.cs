@@ -127,6 +127,39 @@ namespace FKP41
         {
             return new(Path.Combine(rootBackupDirectory.Value, "index.json"));
         }
+
+        /// <summary>
+        /// 指定したファイルパスの <see cref="BackupData"/> を設定します。
+        /// </summary>
+        /// <param name="filePath">ファイルパス。</param>
+        /// <param name="backupData">設定する <see cref="BackupData"/> 型のオブジェクト。</param>
+        /// <param name="isAdd">ファイルパスが存在しない場合、新規に追加する場合は <see langword="true"/> 。</param>
+        /// <returns>正常に設定できた場合は <see langword="true"/> 。</returns>
+        public bool SetBackupData(string filePath, BackupData backupData, bool isAdd = true)
+        {
+            if (backupPairs.TryGetValue(filePath, out var value))
+            {
+                if (!backupData.Equals(value))
+                {
+                    backupPairs[filePath] = backupData;
+                    isChengedBackupPairs = true;
+                    return true;
+                }
+                return false;
+            }
+            else if (isAdd)
+            {
+                backupPairs.Add(filePath, backupData);
+                indexes.Add(filePath);
+                isChengedBackupPairs = true;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         private static JsonSerializerOptions GetJsonOptions()
         {
             JsonSerializerOptions options = new JsonSerializerOptions
