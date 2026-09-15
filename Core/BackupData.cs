@@ -24,6 +24,13 @@ namespace FKP41
             this.isValid = isValid;
             ReloadStorageData();
         }
+        public BackupData(BackupData backupData)
+        {
+            this.backupDirectory = backupData.backupDirectory;
+            this.maxBackupCount = backupData.maxBackupCount;
+            this.isValid = backupData.isValid;
+            this.lastBackupTime = backupData.lastBackupTime;
+        }
 
         public bool IsValid
         {
