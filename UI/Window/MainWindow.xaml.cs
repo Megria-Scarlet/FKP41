@@ -52,7 +52,11 @@ namespace FKP41
             renderTimer.Tick += OnRenderUpdate;
             statusTimer = new(System.Windows.Threading.DispatcherPriority.Background)
             {
+#if DEBUG
+                Interval = TimeSpan.FromTicks(TimeSpan.TicksPerSecond * 30)
+#else
                 Interval = TimeSpan.FromTicks(TimeSpan.TicksPerMinute)
+#endif
             };
             statusTimer.Tick += OnStatusUpdate;
             backupTimer = new(OnAutoBackup);
