@@ -13,6 +13,7 @@ namespace FKP41
         private bool disposedValue;
         private Dictionary<string, BackupData> backupPairs;
         private List<string> indexes;
+        private bool isChengedBackupPairs;
 
         public BackupManager(string rootBackupDirectory) : this(new ObservableObject<string>(rootBackupDirectory))
         {
@@ -23,6 +24,7 @@ namespace FKP41
             this.rootBackupDirectory = rootBackupDirectory;
             this.rootBackupDirectory.PropertyChanged += OnRootBackupDirectoryChanged;
             OnRootBackupDirectoryChanged();
+            isChengedBackupPairs = false;
             _ = this;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -99,8 +101,10 @@ namespace FKP41
             {
                 directory.Create();
             }
+            string oldFileName = oldFile.FullName;
 
-            FileInfo newFile = new(Path.ChangeExtension(oldFile.FullName, "tmp"));
+            FileInfo newFile = new(Path.Combine(Path.GetTempPath(), Path.GetTempFileName()));
+            _ = newFile;
             FileStream fileStream;
             if (newFile.Exists)
             {
@@ -114,9 +118,10 @@ namespace FKP41
             JsonSerializer.Serialize(fileStream, backupPairs, GetJsonOptions());
             fileStream.Dispose();
 
-            oldFile.MoveTo($"{Path.GetFileNameWithoutExtension(oldFile.FullName)}_1.json", true);
-            newFile.MoveTo(Path.ChangeExtension(newFile.FullName, "json"), true);
-            _ = newFile;
+            oldFile.MoveTo(Path.Combine(Path.GetDirectoryName(oldFile.FullName) ?? string.Empty, "index.tmp"), true);
+            newFile.MoveTo(oldFileName, false);
+
+            isChengedBackupPairs = false;
         }
         private FileInfo GetIndexFile()
         {
@@ -146,7 +151,7 @@ namespace FKP41
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal IEnumerable<DirectoryWatcher> CreateWatchers()
+        public IEnumerable<IWatcher> CreateWatchers()
         {
             return indexes.Select(x => new DirectoryWatcher(x, this, backupPairs[x]));
         }
