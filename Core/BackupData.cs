@@ -124,6 +124,21 @@ namespace FKP41
             }
         }
 
+        public void CreateBackup(DateTime createTime, IEnumerable<(string filePath, string archivePath)> files)
+        {
+            if (!backupDirectory.Exists)
+                backupDirectory.Create();
+            string archiveName = Path.Combine(backupDirectory.FullName, $"{createTime:yyyy-MM-ddTHH-mm-ss}.zip" );
+
+            var archive = System.IO.Compression.ZipFile.Open(archiveName, System.IO.Compression.ZipArchiveMode.Create);
+
+            foreach (var (filePath, archivePath) in files)
+            {
+                _ = System.IO.Compression.ZipFileExtensions.CreateEntryFromFile(archive, filePath, archivePath, System.IO.Compression.CompressionLevel.SmallestSize);
+            }
+            archive.Dispose();
+        }
+
         public IEnumerable<FileInfo> GetBackupFiles()
         {
             System.Text.RegularExpressions.Regex regex = BackupFileRegex();
@@ -140,7 +155,7 @@ namespace FKP41
             return !(left == right);
         }
 
-        [System.Text.RegularExpressions.GeneratedRegex(@"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$")]
+        [System.Text.RegularExpressions.GeneratedRegex(@"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$")]
         public static partial System.Text.RegularExpressions.Regex BackupFileRegex();
     }
     public class BackupDataJsonConverter : JsonConverter<BackupData>
