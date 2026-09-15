@@ -270,24 +270,12 @@ namespace FKP41
             IEnumerable<FileInfo> files = backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories));
             IEnumerable<(string, string)> archivePair = files.Select(f => (f.FullName, Path.Combine(_directory.Name, Path.GetRelativePath(_directory.FullName, f.FullName))));
             backupData.CreateBackupArchive(DateTime.Now, archivePair);
-            /*
-            DirectoryInfo directory = backupManager.GetBackupDirectory(FilePath);
-            if (!directory.Exists)
-                directory.Create();
-            string archiveName = Path.Combine(directory.FullName, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".zip");
 
-            var archive = System.IO.Compression.ZipFile.Open(archiveName, System.IO.Compression.ZipArchiveMode.Create);
-
-            IEnumerable<FileInfo> files = backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories));
-            foreach (FileInfo file in files)
-            {
-                string p = Path.Combine(this._directory.Name, StartExtract(file.FullName, this._directory.FullName).TrimStart(Path.DirectorySeparatorChar).ToString());
-                _ = System.IO.Compression.ZipFileExtensions.CreateEntryFromFile(archive, file.FullName, p, System.IO.Compression.CompressionLevel.SmallestSize);
-            }
-            archive.Dispose();
-            */
-
+#if DEBUG
             backupData.DeleteMostOldBackupFiles(1, true);
+#else
+            backupData.DeleteMostOldBackupFiles(5, false);
+#endif
 
             token = false;
             bool isChangedByteSize = false;
@@ -318,25 +306,6 @@ namespace FKP41
                 return true;
             }
             return false;
-        }
-        [Obsolete]
-        private static ReadOnlySpan<char> StartExtract(ReadOnlySpan<char> input, ReadOnlySpan<char> extruct)
-        {
-            int i = 0;
-            for (; i < extruct.Length; i++)
-            {
-                if (i == input.Length)
-                {
-                    return [];
-                }
-                if (input[i] != extruct[i])
-                {
-                    return input;
-                }
-            }
-            ref char reference = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(input);
-            reference = ref System.Runtime.CompilerServices.Unsafe.Add(ref reference, i);
-            return System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref reference, input.Length - i);
         }
 
         private class BackupDataCache : BackupOptionsData, ICloneable
