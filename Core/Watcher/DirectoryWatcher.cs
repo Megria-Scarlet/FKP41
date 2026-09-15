@@ -13,7 +13,7 @@ namespace FKP41
         private DirectoryInfo _directory;
         private BackupManager backupManager;
         private BackupOptionsData backupData;
-        public BackupOptionsData BackupData
+        public BackupOptionsData Options
         {
             [MethodImpl(MethodImplOptions.NoInlining)]
             get => backupData;

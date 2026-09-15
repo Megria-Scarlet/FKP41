@@ -13,7 +13,7 @@ namespace FKP41
         public uint FileCount { get; }
         public bool IsEnable { get; set; }
         public long RawByteSize { get; }
-        public BackupOptionsData BackupData { get; }
+        public BackupOptionsData Options { get; }
         public void OnUpdateStatus();
         public void OnBackup();
     }

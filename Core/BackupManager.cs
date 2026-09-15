@@ -176,7 +176,7 @@ namespace FKP41
             bool result = false;
             foreach (var watcher in watchers)
             {
-                result |= SetBackupData(watcher.FilePath, watcher.BackupData, false);
+                result |= SetBackupData(watcher.FilePath, watcher.Options, false);
             }
             return result;
         }
