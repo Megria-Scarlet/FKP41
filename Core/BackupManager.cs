@@ -107,26 +107,37 @@ namespace FKP41
             {
                 directory.Create();
             }
-            string oldFileName = oldFile.FullName;
 
-            FileInfo newFile = new(Path.Combine(Path.GetTempPath(), Path.GetTempFileName()));
-            FileStream fileStream;
-            if (newFile.Exists)
+            if (oldFile.Exists)
             {
-                fileStream = newFile.OpenWrite();
-                fileStream.SetLength(0);
+                string oldFileName = oldFile.FullName;
+                FileInfo newFile = new(Path.Combine(Path.GetTempPath(), Path.GetTempFileName()));
+                SaveNewFile(newFile);
+                oldFile.MoveTo(Path.Combine(Path.GetDirectoryName(oldFile.FullName) ?? string.Empty, "index.tmp"), true);
+                newFile.MoveTo(oldFileName, false);
             }
             else
             {
-                fileStream = newFile.Create();
+                SaveNewFile(oldFile);
             }
-            JsonSerializer.Serialize(fileStream, backupPairs, GetJsonOptions());
-            fileStream.Dispose();
-
-            oldFile.MoveTo(Path.Combine(Path.GetDirectoryName(oldFile.FullName) ?? string.Empty, "index.tmp"), true);
-            newFile.MoveTo(oldFileName, false);
 
             isChengedBackupPairs = false;
+
+            void SaveNewFile(FileInfo newFileInfo)
+            {
+                FileStream fileStream;
+                if (newFileInfo.Exists)
+                {
+                    fileStream = newFileInfo.OpenWrite();
+                    fileStream.SetLength(0);
+                }
+                else
+                {
+                    fileStream = newFileInfo.Create();
+                }
+                JsonSerializer.Serialize(fileStream, backupPairs, GetJsonOptions());
+                fileStream.Dispose();
+            }
         }
         private FileInfo GetIndexFile()
         {
