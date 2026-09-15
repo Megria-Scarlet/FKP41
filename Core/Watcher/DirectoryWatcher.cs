@@ -277,6 +277,8 @@ namespace FKP41
             }
             archive.Dispose();
 
+            backupData.DeleteMostOldBackupFiles(1, true);
+
             token = false;
             bool isChangedByteSize = false;
             long rawByteSize = backupManager.RemovedBackupFiles(_directory.EnumerateFiles("*.*", SearchOption.AllDirectories)).Sum(fi => fi.Length);
