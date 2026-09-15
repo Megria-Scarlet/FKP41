@@ -344,19 +344,7 @@ namespace FKP41
             {
                 get
                 {
-                    if (ValueEquals(this, baseBackupData))
-                    {
-                        return false;
-                    }
-                    else if (this.lastBackupTime != baseBackupData.LastBackupTime)
-                    {
-                        baseBackupData.ReloadStorageData();
-                        if (this.lastBackupTime != baseBackupData.LastBackupTime)
-                        {
-                            return true;
-                        }
-                    }
-                    return false;
+                    return !ValueEquals(this, baseBackupData);
                 }
             }
             public BackupData Clone() => new(this);
