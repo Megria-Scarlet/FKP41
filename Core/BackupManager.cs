@@ -53,7 +53,7 @@ namespace FKP41
                 s = Path.Combine(rootBackupDirectory, Guid.NewGuid().ToString("N"));
             }
             while (Directory.Exists(s));
-            BackupData backupData = new(new(s));
+            BackupData backupData = new(new DirectoryInfo(s));
             backupPairs.Add(path, backupData);
             SaveIndexFile();
             return backupData;
