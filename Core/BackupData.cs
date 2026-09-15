@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace FKP41
 {
     [JsonConverter(typeof(BackupDataJsonConverter))]
-    public class BackupData
+    public class BackupData : IEquatable<BackupData>
     {
         protected DirectoryInfo backupDirectory;
         protected DateTime? lastBackupTime;
@@ -47,6 +47,19 @@ namespace FKP41
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => lastBackupTime;
         }
+
+        public virtual bool Equals(BackupData? other)
+        {
+            if (other is null || other.GetType() != this.GetType())
+                return false;
+            if (other.isValid != this.isValid
+                || other.maxBackupCount != this.maxBackupCount
+                || !ReferenceEquals(other.backupDirectory, this.backupDirectory)
+                || !string.Equals(other.backupDirectory.FullName, this.backupDirectory.FullName, StringComparison.OrdinalIgnoreCase))
+                return false;
+            return true;
+        }
+
         public void ReloadStorageData()
         {
             if (backupDirectory.Exists)
