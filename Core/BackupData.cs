@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace FKP41
 {
     [JsonConverter(typeof(BackupDataJsonConverter))]
-    public class BackupData : IEquatable<BackupData>
+    public class BackupData : IEquatable<BackupData>, System.Numerics.IEqualityOperators<BackupData, BackupData, bool>
     {
         protected DirectoryInfo backupDirectory;
         protected DateTime? lastBackupTime;
@@ -48,16 +48,25 @@ namespace FKP41
             get => lastBackupTime;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool Equals(object? obj) => Equals(obj as BackupData);
+
         public virtual bool Equals(BackupData? other)
         {
-            if (other is null || other.GetType() != this.GetType())
-                return false;
-            if (other.isValid != this.isValid
-                || other.maxBackupCount != this.maxBackupCount
-                || !ReferenceEquals(other.backupDirectory, this.backupDirectory)
-                || !string.Equals(other.backupDirectory.FullName, this.backupDirectory.FullName, StringComparison.OrdinalIgnoreCase))
-                return false;
-            return true;
+            return other is not null && other.GetType() == this.GetType() && ValueEquals(other, this);
+        }
+
+        protected static bool ValueEquals(BackupData value1, BackupData value2)
+        {
+            return value1.isValid == value2.isValid
+                   && value1.maxBackupCount == value2.maxBackupCount
+                   && (ReferenceEquals(value1.backupDirectory, value2.backupDirectory)
+                       || string.Equals(value1.backupDirectory.FullName, value2.backupDirectory.FullName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(backupDirectory, lastBackupTime, maxBackupCount, isValid);
         }
 
         public void ReloadStorageData()
@@ -81,6 +90,16 @@ namespace FKP41
             {
                 lastBackupTime = null;
             }
+        }
+
+        public static bool operator ==(BackupData? left, BackupData? right)
+        {
+            return EqualityComparer<BackupData>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(BackupData? left, BackupData? right)
+        {
+            return !(left == right);
         }
     }
     public class BackupDataJsonConverter : JsonConverter<BackupData>
