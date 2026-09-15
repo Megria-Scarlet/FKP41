@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace FKP41
 {
     [JsonConverter(typeof(BackupDataJsonConverter))]
-    public class BackupData : IEquatable<BackupData>, System.Numerics.IEqualityOperators<BackupData, BackupData, bool>
+    public partial class BackupData : IEquatable<BackupData>, System.Numerics.IEqualityOperators<BackupData, BackupData, bool>
     {
         protected DirectoryInfo backupDirectory;
         protected DateTime? lastBackupTime;
@@ -80,9 +80,7 @@ namespace FKP41
         {
             if (backupDirectory.Exists)
             {
-                System.Text.RegularExpressions.Regex regex = new(@"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$");
-
-                var fileInfo = backupDirectory.EnumerateFiles("*.zip", SearchOption.TopDirectoryOnly).Where(x => regex.IsMatch(System.IO.Path.GetFileNameWithoutExtension(x.Name))).OrderByDescending(x => x.LastWriteTimeUtc).FirstOrDefault();
+                var fileInfo = GetBackupFiles().OrderByDescending(x => x.LastWriteTimeUtc).FirstOrDefault();
 
                 if (fileInfo is null)
                 {
@@ -99,6 +97,39 @@ namespace FKP41
             }
         }
 
+        public void DeleteMostOldBackupFiles(int deleteMaxCount, bool isSendToRecycleBin)
+        {
+            if (deleteMaxCount > 0)
+            {
+                FileInfo[] backupFiles = [.. GetBackupFiles().OrderBy(f => f.LastWriteTimeUtc)];
+                uint maxBackupCount = Math.Max(this.maxBackupCount, 1);
+                if ((uint)backupFiles.Length > maxBackupCount)
+                {
+                    Span<FileInfo> span = backupFiles.AsSpan(0, (int)Math.Min((uint)backupFiles.Length - maxBackupCount, (uint)deleteMaxCount));
+                    if (isSendToRecycleBin)
+                    {
+                        foreach (FileInfo fileInfo in span)
+                        {
+                            Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(fileInfo.FullName, Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
+                        }
+                    }
+                    else
+                    {
+                        foreach (FileInfo fileInfo in span)
+                        {
+                            fileInfo.Delete();
+                        }
+                    }
+                }
+            }
+        }
+
+        public IEnumerable<FileInfo> GetBackupFiles()
+        {
+            System.Text.RegularExpressions.Regex regex = BackupFileRegex();
+            return backupDirectory.EnumerateFiles("*.zip", SearchOption.TopDirectoryOnly).Where(x => regex.IsMatch(Path.GetFileNameWithoutExtension(x.Name)));
+        }
+
         public static bool operator ==(BackupData? left, BackupData? right)
         {
             return EqualityComparer<BackupData>.Default.Equals(left, right);
@@ -108,6 +139,9 @@ namespace FKP41
         {
             return !(left == right);
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$")]
+        public static partial System.Text.RegularExpressions.Regex BackupFileRegex();
     }
     public class BackupDataJsonConverter : JsonConverter<BackupData>
     {
