@@ -110,7 +110,6 @@ namespace FKP41
             string oldFileName = oldFile.FullName;
 
             FileInfo newFile = new(Path.Combine(Path.GetTempPath(), Path.GetTempFileName()));
-            _ = newFile;
             FileStream fileStream;
             if (newFile.Exists)
             {
