@@ -93,7 +93,7 @@ namespace FKP41
                 indexes = [];
             }
         }
-        private void SaveIndexFile()
+        public void SaveIndexFile()
         {
             var oldFile = GetIndexFile();
             var directory = oldFile.Directory;
