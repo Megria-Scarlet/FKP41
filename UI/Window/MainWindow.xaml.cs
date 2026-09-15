@@ -149,6 +149,10 @@ namespace FKP41
             {
                 watcher.OnUpdateStatus();
             }
+            if (backupManager.IsChengedBackupPairs)
+            {
+                backupManager.SaveIndexFile();
+            }
         }
         private void OnAutoBackup(object? state)
         {
