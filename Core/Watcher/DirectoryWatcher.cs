@@ -211,7 +211,11 @@ namespace FKP41
                 {
                     if (backupDataCache.IsChanged)
                     {
-
+                        BackupData backupData = backupDataCache.Clone();
+                        if (backupManager.SetBackupData(FilePath, backupData))
+                        {
+                            this.backupData = backupData;
+                        }
                     }
                 }
             }
