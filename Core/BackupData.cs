@@ -157,6 +157,56 @@ namespace FKP41.Core
         [System.Text.RegularExpressions.GeneratedRegex(@"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$")]
         public static partial System.Text.RegularExpressions.Regex BackupFileRegex();
     }
+
+
+    /// <summary>
+    /// <see cref="BackupOptionsData"/> 型のオブジェクトと Json ファイルデータとの相互変換に使用する中間クラス。
+    /// </summary>
+    [JsonConverter(typeof(BackupOptionsJsonDataJsonConverter))]
+    public sealed class BackupOptionsJsonData
+    {
+        public string? BackupDirectory;
+        public uint MaxBackupCount;
+        public bool IsValid;
+
+        public BackupOptionsJsonData(string? backupDirectory) : this(backupDirectory, 3, true)
+        {
+
+        }
+
+        public BackupOptionsJsonData(string? backupDirectory, uint maxBackupCount, bool isValid)
+        {
+            BackupDirectory = backupDirectory;
+            MaxBackupCount = maxBackupCount;
+            IsValid = isValid;
+        }
+
+        public static BackupOptionsJsonData Create(string watcherFilePath, BackupOptionsData backupOptions, string backupDirectory)
+        {
+            return new(Path.GetRelativePath(backupDirectory, backupOptions.BackupDirectory.FullName),
+                       backupOptions.MaxBackupCount,
+                       backupOptions.IsValid);
+        }
+
+        public BackupOptionsData ToOptions(string backupDirectory)
+        {
+            if (Path.IsPathRooted(BackupDirectory))
+            {
+                DirectoryInfo directoryInfo = new(BackupDirectory);
+                return new(directoryInfo, MaxBackupCount, IsValid);
+            }
+            else if (!string.IsNullOrEmpty(BackupDirectory))
+            {
+                DirectoryInfo directoryInfo = new(Path.Combine(backupDirectory, BackupDirectory));
+                return new(directoryInfo, MaxBackupCount, IsValid);
+            }
+            else
+            {
+                throw new NullReferenceException();
+            }
+        }
+    }
+
     public class BackupOptionsJsonDataJsonConverter : JsonConverter<BackupOptionsJsonData>
     {
         public override BackupOptionsJsonData? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -240,33 +290,4 @@ namespace FKP41.Core
         }
     }
 
-    /// <summary>
-    /// <see cref="BackupOptionsData"/> 型のオブジェクトと Json ファイルデータとの相互変換に使用する中間クラス。
-    /// </summary>
-    [JsonConverter(typeof(BackupOptionsJsonDataJsonConverter))]
-    public sealed class BackupOptionsJsonData
-    {
-        public string? BackupDirectory;
-        public uint MaxBackupCount;
-        public bool IsValid;
-
-        public BackupOptionsJsonData(string? backupDirectory) : this(backupDirectory, 3, true)
-        {
-
-        }
-
-        public BackupOptionsJsonData(string? backupDirectory, uint maxBackupCount, bool isValid)
-        {
-            BackupDirectory = backupDirectory;
-            MaxBackupCount = maxBackupCount;
-            IsValid = isValid;
-        }
-
-        public static BackupOptionsJsonData Create(string watcherFilePath, BackupOptionsData backupOptions, string backupDirectory)
-        {
-            return new(Path.GetRelativePath(backupDirectory, backupOptions.BackupDirectory.FullName),
-                       backupOptions.MaxBackupCount,
-                       backupOptions.IsValid);
-        }
-    }
 }
