@@ -192,17 +192,55 @@ namespace FKP41.WPF
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 var fileNames = (string[])e.Data.GetData(DataFormats.FileDrop);
-                foreach (var name in fileNames)
-                {
-                    if (System.IO.File.Exists(name))
-                    {
+                AddFiles(fileNames);
+            }
+        }
 
-                    }
-                    else if (System.IO.Directory.Exists(name))
+        private void AddButton_Click(object sender, RoutedEventArgs e)
+        {
+            const string DialogTitle = "ディレクトリーを指定してください。";
+            using Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog openFileDialog = new(DialogTitle)
+            {
+                IsFolderPicker = true, // フォルダ選択ダイアログ
+                Multiselect = true, // 複数選択の可否
+            };
+
+            if (openFileDialog.ShowDialog() == Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+            {
+                AddFiles(openFileDialog.FileNames);
+            }
+        }
+
+        private void AddFiles<TList>(TList fileNames) where TList : IEnumerable<string>
+        {
+            foreach (var name in fileNames)
+            {
+                if (watcherViewModels.Any(x => EqualsFilePath(x.FilePath, name)))
+                {
+                    continue;
+                }
+                else if (System.IO.File.Exists(name))
+                {
+
+                }
+                else if (System.IO.Directory.Exists(name))
+                {
+                    DirectoryWatcher watcher = new(name, backupManager);
+                    watcher.OnUpdateStatus();
+                    watcherViewModels.Add(new(watcher));
+                }
+            }
+            static bool EqualsFilePath(scoped ReadOnlySpan<char> path0, scoped ReadOnlySpan<char> path1)
+            {
+                RemovePathSeparator(ref path0);
+                RemovePathSeparator(ref path1);
+                return path0.Equals(path1, StringComparison.OrdinalIgnoreCase);
+
+                static void RemovePathSeparator(scoped ref ReadOnlySpan<char> path)
+                {
+                    if (!path.IsEmpty && path[^1] == System.IO.Path.PathSeparator)
                     {
-                        DirectoryWatcher watcher = new(name, backupManager);
-                        watcher.OnUpdateStatus();
-                        watcherViewModels.Add(new(watcher));
+                        path = path[..^2];
                     }
                 }
             }
