@@ -5,6 +5,9 @@
 ![OS:Windows](https://img.shields.io/badge/OS-Windows-blue.svg)
 ![ver.0.0](https://img.shields.io/badge/Release-ver.0.0.1β-red.svg)
 
+> [!CAUTION]
+> This document is written in **Japanese**.  
+
 制作: **Megria**  
 GitHub: <https://github.com/Megria-Scarlet/FKP41>  
 
