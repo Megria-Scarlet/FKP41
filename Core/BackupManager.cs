@@ -90,9 +90,7 @@ namespace FKP41.Core
                 using FileStream fileStream = file.OpenRead();
                 try
                 {
-                    var pairs = JsonSerializer.Deserialize<Dictionary<string, BackupOptionsData>>(fileStream, GetJsonOptions())!;
-                    indexes = [.. pairs.Select(x => x.Key)];
-                    backupPairs = pairs; //pairs.ToDictionary();
+                    LoadJson(fileStream);
                 }
                 catch (JsonException)
                 {
@@ -104,6 +102,20 @@ namespace FKP41.Core
             {
                 backupPairs = [];
                 indexes = [];
+            }
+
+            [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs), nameof(indexes))]
+            void LoadJson(Stream stream)
+            {
+                var pairs = JsonSerializer.Deserialize<Dictionary<string, BackupOptionsJsonData>>(stream, GetJsonOptions())!;
+                int capacity = Math.Max(((pairs.Count + 3) >> 2) << 2, 16);
+                this.backupPairs = ToOptionsData(pairs, rootBackupDirectory.Value).ToDictionary();
+                this.indexes = [.. this.backupPairs.Keys];
+
+                static IEnumerable<KeyValuePair<string, BackupOptionsData>> ToOptionsData(IEnumerable<KeyValuePair<string, BackupOptionsJsonData>> pairs, string backupDirectory)
+                {
+                    return pairs.Select(x => new KeyValuePair<string, BackupOptionsData>(x.Key, x.Value.ToOptions(backupDirectory)));
+                }
             }
         }
         /// <summary>
@@ -128,18 +140,18 @@ namespace FKP41.Core
             {
                 string oldFileName = oldFile.FullName;
                 FileInfo newFile = new(Path.Combine(Path.GetTempPath(), Path.GetTempFileName()));
-                SaveNewFile(newFile, backupPairs);
+                SaveNewFile(newFile, rootBackupDirectory.Value, backupPairs);
                 oldFile.MoveTo(Path.Combine(Path.GetDirectoryName(oldFile.FullName) ?? string.Empty, Path.ChangeExtension(IndexFileName, "tmp")), true);
                 newFile.MoveTo(oldFileName, false);
             }
             else
             {
-                SaveNewFile(oldFile, backupPairs);
+                SaveNewFile(oldFile, rootBackupDirectory.Value, backupPairs);
             }
 
             isChengedBackupPairs = false;
 
-            static void SaveNewFile(FileInfo newFileInfo, Dictionary<string, BackupOptionsData> backupPairs)
+            static void SaveNewFile(FileInfo newFileInfo, string backupDirectory, Dictionary<string, BackupOptionsData> backupPairs)
             {
                 FileStream fileStream;
                 if (newFileInfo.Exists)
@@ -151,7 +163,7 @@ namespace FKP41.Core
                 {
                     fileStream = newFileInfo.Create();
                 }
-                JsonSerializer.Serialize(fileStream, backupPairs, GetJsonOptions());
+                JsonSerializer.Serialize(fileStream, backupPairs.ToDictionary(x => x.Key, x => BackupOptionsJsonData.Create(x.Key, x.Value, backupDirectory)), GetJsonOptions());
                 fileStream.Dispose();
             }
         }
