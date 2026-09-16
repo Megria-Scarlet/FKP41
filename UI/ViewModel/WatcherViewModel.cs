@@ -60,6 +60,20 @@ namespace FKP41.WPF
             get => _watcher.RawByteSize;
         }
 
+        private System.Windows.Input.ICommand? deleteCommand;
+        public System.Windows.Input.ICommand? DeleteCommand
+        {
+            get => deleteCommand;
+            set
+            {
+                if (!EqualityComparer<System.Windows.Input.ICommand>.Default.Equals(value, deleteCommand))
+                {
+                    deleteCommand = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
         public WatcherViewModel(IWatcher watcher)
         {
             this._watcher = watcher;
