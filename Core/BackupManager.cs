@@ -15,6 +15,7 @@ namespace FKP41.Core
         private ObservableObject<string> rootBackupDirectory;
         private bool disposedValue;
         private Dictionary<string, BackupOptionsData> backupPairs;
+        private Dictionary<string, BackupOptionsData>? reservationDeleteBackups;
         private List<string> indexes;
         private bool isChengedBackupPairs;
 
@@ -38,8 +39,10 @@ namespace FKP41.Core
             this.rootBackupDirectory.PropertyChanged += OnRootBackupDirectoryChanged;
             OnRootBackupDirectoryChanged();
             isChengedBackupPairs = false;
-            _ = this;
         }
+
+        #region Add・Remove
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DirectoryInfo GetBackupDirectory(string path)
         {
@@ -60,6 +63,14 @@ namespace FKP41.Core
 
         private BackupOptionsData Register(string path)
         {
+            if (reservationDeleteBackups is not null && reservationDeleteBackups.TryGetValue(path, out var backupOptions))
+            {
+                backupPairs.Add(path, backupOptions);
+                reservationDeleteBackups.Remove(path);
+                if (reservationDeleteBackups.Count == 0)
+                    reservationDeleteBackups = null;
+                return backupOptions;
+            }
             string s;
             do
             {
@@ -71,6 +82,30 @@ namespace FKP41.Core
             SaveIndexFile();
             return backupData;
         }
+
+        public bool Remove(string path)
+        {
+            if (backupPairs.Remove(path, out BackupOptionsData? backupOptions))
+            {
+                isChengedBackupPairs = true;
+                if (reservationDeleteBackups is null)
+                {
+                    reservationDeleteBackups = new(4)
+                    {
+                        {path, backupOptions }
+                    };
+                }
+                else if (!reservationDeleteBackups.TryAdd(path, backupOptions))
+                {
+                    reservationDeleteBackups[path] = backupOptions;
+                }
+
+                return true;
+            }
+            return false;
+        }
+
+        #endregion
 
         [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs))]
         private void OnRootBackupDirectoryChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
@@ -129,6 +164,42 @@ namespace FKP41.Core
         /// <exception cref="UnauthorizedAccessException"/>
         public void SaveIndexFile()
         {
+            if (reservationDeleteBackups is not null)
+            {
+                foreach (var optionsData in reservationDeleteBackups.Values)
+                {
+                    DirectoryInfo backupDirectory = optionsData.BackupDirectory;
+                    if (backupDirectory.Exists)
+                    {
+                        do
+                        {
+                            try
+                            {
+#if DEBUG
+                                Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory(backupDirectory.FullName, Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
+#else
+                                backupDirectory.Delete(true);
+#endif
+                            }
+                            catch (IOException e)
+                            {
+#if WINDOWS
+                                string msg = $"\"{backupDirectory.FullName}\" の削除で IOException エラーが発生しました。\n再実行しますか？ \n詳細\n{e.Message}";
+                                if (System.Windows.MessageBox.Show(msg, "IOException エラー", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Error) == System.Windows.MessageBoxResult.Yes)
+                                {
+                                    continue;
+                                }
+#else
+                                throw;
+#endif
+                            }
+                        }
+                        while (false);
+                    }
+                }
+            }
+
+
             var oldFile = GetIndexFile();
             var directory = oldFile.Directory;
             if (!directory!.Exists)
