@@ -5,16 +5,17 @@
 ![OS:Windows](https://img.shields.io/badge/OS-Windows-blue.svg)
 ![ver.0.0](https://img.shields.io/badge/Release-ver.0.0.1β-red.svg)
 
-制作: Megria  
+制作: **Megria**  
 GitHub: <https://github.com/Megria-Scarlet/FKP41>  
 
 ## 始めに
 
-**Fu\*c "Kernel-Power 41" !!**
+**「Fu\*c "Kernel-Power 41" !!」**  
+&emsp;～これは、ファイル保存時に Kernel-Power 41 が発生し、幾度もなくファイルを破損させられた者の物語である。～
 
 ## 概要
 
-定期的にバックアップを作成するアプリです。
+定期的にローカルファイルのバックアップを作成するアプリです。
 
 ## 免責事項
 
