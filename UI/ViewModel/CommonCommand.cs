@@ -18,6 +18,22 @@ namespace FKP41.WPF
 
         public event EventHandler? CanExecuteChanged;
 
+        public CommonCommand([System.Diagnostics.CodeAnalysis.AllowNull] Action executeAction)
+        {
+            this.canExecuteFunc = null;
+            this.executeAction = sender => executeAction?.Invoke();
+        }
+        public CommonCommand([System.Diagnostics.CodeAnalysis.AllowNull] Action<object?> executeAction) : this(null, executeAction)
+        {
+
+        }
+
+        public CommonCommand([System.Diagnostics.CodeAnalysis.AllowNull] Func<object?, bool> canExecuteFunc, [System.Diagnostics.CodeAnalysis.AllowNull] Action<object?> executeAction)
+        {
+            this.canExecuteFunc = canExecuteFunc;
+            this.executeAction = executeAction;
+        }
+
         public bool CanExecute(object? parameter)
         {
             return canExecuteFunc is null || canExecuteFunc.Invoke(parameter);
