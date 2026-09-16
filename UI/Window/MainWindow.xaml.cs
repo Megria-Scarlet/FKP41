@@ -45,6 +45,10 @@ namespace FKP41.WPF
             backupManager = new(backupPath);
 
             watcherViewModels = [.. backupManager.CreateWatchers().Select(x => new WatcherViewModel(x))];
+            foreach (var viewMoel in watcherViewModels)
+            {
+                viewMoel.DeleteCommand = new WatcherDeleteCommand(watcherViewModels, viewMoel, backupManager);
+            }
             
             renderTimer = new(System.Windows.Threading.DispatcherPriority.Render)
             {
@@ -245,5 +249,29 @@ namespace FKP41.WPF
                 }
             }
         }
+
+        private sealed class WatcherDeleteCommand : ICommand
+        {
+            private System.Collections.ObjectModel.ObservableCollection<WatcherViewModel> watcherViewModels;
+            private WatcherViewModel viewModel;
+            private BackupManager backupManager;
+            public event EventHandler? CanExecuteChanged;
+
+            public WatcherDeleteCommand(System.Collections.ObjectModel.ObservableCollection<WatcherViewModel> watcherViewModels, WatcherViewModel viewModel, BackupManager backupManager)
+            {
+                this.watcherViewModels = watcherViewModels;
+                this.viewModel = viewModel;
+                this.backupManager = backupManager;
+            }
+
+            public bool CanExecute(object? parameter) => true;
+
+            public void Execute(object? parameter)
+            {
+                if (backupManager.Remove(viewModel.FilePath) && !watcherViewModels.Remove(viewModel))
+                    throw new Exception("Failed to delete the element.");
+            }
+        }
+
     }
 }
