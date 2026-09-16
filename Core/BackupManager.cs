@@ -15,6 +15,10 @@ namespace FKP41
         private List<string> indexes;
         private bool isChengedBackupPairs;
 
+        /// <summary>
+        /// <see cref="backupPairs"/> の値が変更されたかどうかを示す値を取得します。
+        /// </summary>
+        /// <returns><see cref="backupPairs"/> の値が変更された場合は <see langword="true"/> 。</returns>
         public bool IsChengedBackupPairs
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,18 +116,18 @@ namespace FKP41
             {
                 string oldFileName = oldFile.FullName;
                 FileInfo newFile = new(Path.Combine(Path.GetTempPath(), Path.GetTempFileName()));
-                SaveNewFile(newFile);
+                SaveNewFile(newFile, backupPairs);
                 oldFile.MoveTo(Path.Combine(Path.GetDirectoryName(oldFile.FullName) ?? string.Empty, "index.tmp"), true);
                 newFile.MoveTo(oldFileName, false);
             }
             else
             {
-                SaveNewFile(oldFile);
+                SaveNewFile(oldFile, backupPairs);
             }
 
             isChengedBackupPairs = false;
 
-            void SaveNewFile(FileInfo newFileInfo)
+            static void SaveNewFile(FileInfo newFileInfo, Dictionary<string, BackupOptionsData> backupPairs)
             {
                 FileStream fileStream;
                 if (newFileInfo.Exists)
