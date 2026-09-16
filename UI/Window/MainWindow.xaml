@@ -46,6 +46,14 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Path=RawByteSize, StringFormat={}{0:N0}}">
                         <GridViewColumnHeader Content="Byte size" />
                     </GridViewColumn>
+                    <GridViewColumn>
+                        <GridViewColumnHeader Content="Delete"/>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="削除" Command="{Binding DeleteCommand}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>
