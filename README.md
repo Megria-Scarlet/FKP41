@@ -11,7 +11,8 @@ GitHub: <https://github.com/Megria-Scarlet/FKP41>
 ## 始めに
 
 **「Fu\*c "Kernel-Power 41" !!」**  
-&emsp;～これは、ファイル保存時に Kernel-Power 41 が発生し、幾度もなくファイルを破損させられた者の物語である。～
+> これは、ファイル保存時に Kernel-Power 41 が発生し、  
+> &emsp;&emsp;&emsp;幾度もなくファイルを破損させられた者の物語である。
 
 ## 概要
 
