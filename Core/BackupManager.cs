@@ -184,7 +184,7 @@ namespace FKP41.Core
                             catch (IOException e)
                             {
 #if WINDOWS
-                                string msg = $"\"{backupDirectory.FullName}\" の削除で IOException エラーが発生しました。\n再実行しますか？ \n詳細\n{e.Message}";
+                                string msg = $"\"{backupDirectory.FullName}\" の削除で IOException エラーが発生しました。\n再実行しますか？\n詳細\n{e.Message}";
                                 if (System.Windows.MessageBox.Show(msg, "IOException エラー", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Error) == System.Windows.MessageBoxResult.Yes)
                                 {
                                     continue;
