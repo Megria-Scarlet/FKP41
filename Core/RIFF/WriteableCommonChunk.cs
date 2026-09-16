@@ -54,6 +54,8 @@ namespace FKP41.Core.RIFF
             stream.Write(src);
         }
 
+        #region WriteValue
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(uint value, bool isLittleEndian)
         {
@@ -76,6 +78,8 @@ namespace FKP41.Core.RIFF
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int value) => Write((uint)value);
 
+        #endregion
+
         protected void Grow(int minimumLength)
         {
             byte[] array = arrayPool.Rent(minimumLength);
@@ -83,6 +87,9 @@ namespace FKP41.Core.RIFF
             (array, this.array) = (this.array, array);
             arrayPool.Return(array);
         }
+
+        #region ThrowOddStreamPosition
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ThrowIfOddStreamPosition(Stream stream)
         {
@@ -97,6 +104,7 @@ namespace FKP41.Core.RIFF
         {
             throw new InvalidOperationException("The current stream position is odd. The RIFF format requires 2 byte alignment.");
         }
+        #endregion
 
         #region Dispose
         protected virtual void Dispose(bool disposing)
