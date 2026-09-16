@@ -49,6 +49,21 @@ namespace FKP41.Core.RIFF
             isFlashed = true;
         }
 
+        /// <summary>
+        /// 'LIST' [0x4C, 0x49, 0x53, 0x54] を示す FourCC 定数を取得します。
+        /// </summary>
+        /// <returns>'LIST' を示す FourCC 定数。</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static uint GetListFourCC()
+        {
+            return System.Runtime.CompilerServices.Unsafe.As<byte, uint>(ref System.Runtime.InteropServices.MemoryMarshal.GetReference(GetListFourCCSpan()));
+        }
+        /// <summary>
+        /// 'LIST' [0x4C, 0x49, 0x53, 0x54] を示す FourCC 定数を取得します。
+        /// </summary>
+        /// <returns>'LIST' を示す FourCC 定数。</returns>
+        public static ReadOnlySpan<byte> GetListFourCCSpan() => [0x4C, 0x49, 0x53, 0x54];
+
         #region Dispose
         protected virtual void Dispose(bool disposing)
         {
