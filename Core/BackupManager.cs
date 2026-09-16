@@ -9,6 +9,9 @@ namespace FKP41
 {
     public sealed class BackupManager : IDisposable
     {
+
+        private const string IndexFileName = "index.json";
+
         private ObservableObject<string> rootBackupDirectory;
         private bool disposedValue;
         private Dictionary<string, BackupOptionsData> backupPairs;
@@ -103,6 +106,15 @@ namespace FKP41
                 indexes = [];
             }
         }
+        /// <summary>
+        /// index.json ファイルに現在の情報を保存します。
+        /// </summary>
+        /// <exception cref="DirectoryNotFoundException"/>
+        /// <exception cref="System.Security.SecurityException"/>
+        /// <exception cref="IOException"/>
+        /// <exception cref="PathTooLongException"/>
+        /// <exception cref="ArgumentException"/>
+        /// <exception cref="UnauthorizedAccessException"/>
         public void SaveIndexFile()
         {
             var oldFile = GetIndexFile();
@@ -117,7 +129,7 @@ namespace FKP41
                 string oldFileName = oldFile.FullName;
                 FileInfo newFile = new(Path.Combine(Path.GetTempPath(), Path.GetTempFileName()));
                 SaveNewFile(newFile, backupPairs);
-                oldFile.MoveTo(Path.Combine(Path.GetDirectoryName(oldFile.FullName) ?? string.Empty, "index.tmp"), true);
+                oldFile.MoveTo(Path.Combine(Path.GetDirectoryName(oldFile.FullName) ?? string.Empty, Path.ChangeExtension(IndexFileName, "tmp")), true);
                 newFile.MoveTo(oldFileName, false);
             }
             else
@@ -145,7 +157,7 @@ namespace FKP41
         }
         private FileInfo GetIndexFile()
         {
-            return new(Path.Combine(rootBackupDirectory.Value, "index.json"));
+            return new(Path.Combine(rootBackupDirectory.Value, IndexFileName));
         }
 
         /// <summary>
@@ -206,17 +218,43 @@ namespace FKP41
             };
             return options;
         }
+        /// <summary>
+        /// 入力された <see cref="FileInfo"/> 型のオブジェクトを列挙するオブジェクトから、バックアップディレクトリーに含まれる
+        /// <see cref="FileInfo"/> 型のオブジェクトを差集合します。
+        /// </summary>
+        /// <param name="files"><see cref="FileInfo"/> 型のオブジェクトを列挙するオブジェクト。</param>
+        /// <returns>
+        /// <paramref name="files"/> からバックアップディレクトリーに含まれる <see cref="FileInfo"/>
+        /// 型のオブジェクトを差集合したものを列挙するオブジェクト。</returns>
         public IEnumerable<FileInfo> RemovedBackupFiles(IEnumerable<FileInfo> files)
         {
             DirectoryInfo rootDirectory = new(this.rootBackupDirectory.Value);
-            if (rootDirectory.Exists)
+            return rootDirectory.Exists ? files.Where(f => !Contains(rootDirectory, f)) : files;
+        }
+        /// <summary>
+        /// <see cref="DirectoryInfo"/> 型のオブジェクトが示すディレクトリーに、指定した
+        /// <see cref="FileInfo"/> 型のオブジェクトが示すファイルが含まれるかどうかを判定します。
+        /// </summary>
+        /// <param name="directoryInfo">ディレクトリーを示す <see cref="DirectoryInfo"/> 型のオブジェクト。</param>
+        /// <param name="fileInfo">ファイルを示す <see cref="FileInfo"/> 型のオブジェクト。</param>
+        /// <returns>
+        /// <paramref name="fileInfo"/> が示すファイルが <paramref name="directoryInfo"/> が示すディレクトリーに含まれる場合は
+        /// <see langword="true"/> 。それ以外の場合は <see langword="false"/> 。
+        /// </returns>
+        private static bool Contains(DirectoryInfo directoryInfo, FileInfo fileInfo)
+        {
+            string dirPath = Path.GetFullPath(directoryInfo.FullName);
+            string filePath = Path.GetFullPath(fileInfo.FullName);
+
+            // Windows の場合は末尾の区切り文字（\）を考慮して統一する
+            if (!dirPath.AsSpan().EndsWith([Path.DirectorySeparatorChar], StringComparison.OrdinalIgnoreCase))
             {
-                return files.Where(x => !x.FullName.AsSpan().StartsWith(rootDirectory.FullName));
+                dirPath += Path.DirectorySeparatorChar;
             }
-            else
-            {
-                return files;
-            }
+
+            // ファイルパスが、ディレクトリパスから始まっているかを前方一致で判定
+            // ※Windows（標準）は大文字小文字を区別しないため OrdinalIgnoreCase を使用
+            return filePath.StartsWith(dirPath, StringComparison.OrdinalIgnoreCase);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
