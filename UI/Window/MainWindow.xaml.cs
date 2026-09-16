@@ -8,8 +8,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using FKP41.Core;
 
-namespace FKP41
+namespace FKP41.WPF
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

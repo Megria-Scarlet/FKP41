@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 
-namespace FKP41
+namespace FKP41.Core
 {
     public interface IWatcher : INotifyPropertyChanged
     {

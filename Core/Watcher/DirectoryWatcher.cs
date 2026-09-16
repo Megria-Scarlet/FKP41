@@ -5,7 +5,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace FKP41
+namespace FKP41.Core
 {
     internal class DirectoryWatcher : IWatcher
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FKP41
+namespace FKP41.Core
 {
     public enum WatcherStatus
     {

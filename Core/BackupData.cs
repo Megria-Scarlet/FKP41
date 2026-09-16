@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FKP41
+namespace FKP41.Core
 {
     [JsonConverter(typeof(BackupDataJsonConverter))]
     public partial class BackupOptionsData : IEquatable<BackupOptionsData>, System.Numerics.IEqualityOperators<BackupOptionsData, BackupOptionsData, bool>

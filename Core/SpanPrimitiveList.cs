@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace FKP41
+namespace FKP41.Core
 {
     public ref struct SpanPrimitiveList<T> : IDisposable
         where T : unmanaged

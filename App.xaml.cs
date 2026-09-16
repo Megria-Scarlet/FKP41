@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace FKP41
+namespace FKP41.WPF
 {
     /// <summary>
     /// Interaction logic for App.xaml

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
+using FKP41.Core;
 
-namespace FKP41
+namespace FKP41.WPF
 {
     public class WatcherViewModel : INotifyPropertyChanged, IDisposable, IWatcher
     {

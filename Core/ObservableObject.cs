@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace FKP41
+namespace FKP41.Core
 {
     /// <summary>
     /// 単一の <typeparamref name="T"/> 型のオブジェクトの変更通知をサポートするクラス。

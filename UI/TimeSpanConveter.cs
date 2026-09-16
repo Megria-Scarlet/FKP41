@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Text;
 using System.Windows.Data;
 
-namespace FKP41
+namespace FKP41.WPF
 {
     public class TimeSpanConveter : IValueConverter
     {

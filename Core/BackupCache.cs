@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace FKP41
+namespace FKP41.Core
 {
     public struct BackupCache
     {

@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 
-namespace FKP41
+namespace FKP41.Core
 {
     public sealed class BackupManager : IDisposable
     {
