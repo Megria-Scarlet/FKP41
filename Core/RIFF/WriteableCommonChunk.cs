@@ -6,6 +6,9 @@ using System.Text;
 
 namespace FKP41.Core.RIFF
 {
+    /// <summary>
+    /// 実データを書き込み可能な汎用チャンククラス。
+    /// </summary>
     public class WriteableCommonChunk : IDisposable, IChunk
     {
         protected bool isDisposed;
@@ -13,6 +16,10 @@ namespace FKP41.Core.RIFF
         protected System.Buffers.ArrayPool<byte> arrayPool;
 
         protected uint chunkId;
+        /// <summary>
+        /// このチャンクの FourCC を示す 32 ビット符号なし整数を取得します。
+        /// </summary>
+        /// <returns>FourCC を示す 32 ビット符号なし整数。</returns>
         public uint ChunkId
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -35,6 +42,8 @@ namespace FKP41.Core.RIFF
 
         public virtual void WriteChunk(Stream stream)
         {
+            ObjectDisposedException.ThrowIf(isDisposed, this);
+
             ThrowIfOddStreamPosition(stream);
             WriteChunkHeadToStream(stream);
             stream.Write(array.AsSpan(0, (int)chunkSize));
@@ -56,6 +65,31 @@ namespace FKP41.Core.RIFF
 
         #region WriteValue
 
+        #region Int64
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(ulong value, bool isLittleEndian)
+        {
+            Write(isLittleEndian == BitConverter.IsLittleEndian ? value : System.Buffers.Binary.BinaryPrimitives.ReverseEndianness(value));
+        }
+        public void Write(ulong value)
+        {
+            ObjectDisposedException.ThrowIf(isDisposed, this);
+            const int ByteSize = sizeof(ulong);
+
+            IfGrow(ByteSize);
+
+            Span<byte> src = System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref value), ByteSize);
+            src.CopyTo(array.AsSpan((int)chunkSize));
+            chunkSize += ByteSize;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(long value, bool isLittleEndian) => Write((ulong)value, isLittleEndian);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(long value) => Write((ulong)value);
+        #endregion
+
+        #region Int32
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(uint value, bool isLittleEndian)
         {
@@ -63,20 +97,53 @@ namespace FKP41.Core.RIFF
         }
         public void Write(uint value)
         {
-            if (chunkSize + sizeof(uint) > array.Length)
-            {
-                Grow((int)(chunkSize + sizeof(uint)));
-            }
+            ObjectDisposedException.ThrowIf(isDisposed, this);
+            const int ByteSize = sizeof(uint);
 
-            Span<byte> src = System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref Unsafe.As<uint, byte>(ref value), sizeof(uint));
+            IfGrow(ByteSize);
+
+            Span<byte> src = System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref Unsafe.As<uint, byte>(ref value), ByteSize);
             src.CopyTo(array.AsSpan((int)chunkSize));
-            chunkSize += sizeof(uint);
+            chunkSize += ByteSize;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int value, bool isLittleEndian) => Write((uint)value, isLittleEndian);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int value) => Write((uint)value);
+        #endregion
+
+        #region Int16
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(ushort value, bool isLittleEndian)
+        {
+            Write(isLittleEndian == BitConverter.IsLittleEndian ? value : System.Buffers.Binary.BinaryPrimitives.ReverseEndianness(value));
+        }
+        public void Write(ushort value)
+        {
+            ObjectDisposedException.ThrowIf(isDisposed, this);
+            const int ByteSize = sizeof(ushort);
+
+            IfGrow(ByteSize);
+
+            Span<byte> src = System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref Unsafe.As<ushort, byte>(ref value), ByteSize);
+            src.CopyTo(array.AsSpan((int)chunkSize));
+            chunkSize += ByteSize;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(short value, bool isLittleEndian) => Write((ushort)value, isLittleEndian);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(short value) => Write((ushort)value);
+        #endregion
+
+        private void IfGrow(uint addByteSize)
+        {
+            if (chunkSize + addByteSize > array.Length)
+            {
+                Grow((int)(chunkSize + addByteSize));
+            }
+        }
 
         #endregion
 
