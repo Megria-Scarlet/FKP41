@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace FKP41.Core.RIFF
 {
-    public class WriteableListChunk : IChunk, IReadOnlyDictionary<uint, IChunk>
+    public class WriteableListChunk : IChunk, IReadOnlyDictionary<uint, IChunk>, IList<IChunk>
     {
         private readonly uint chunkId;
         private List<IChunk> chunks;
@@ -64,7 +64,21 @@ namespace FKP41.Core.RIFF
             get => this.chunks.Count;
         }
 
-        public IChunk this[uint chunkId]
+        public bool IsReadOnly
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => false;
+        }
+
+        public IChunk this[int index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.chunks[index];
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => this.chunks[index] = value;
+        }
+
+        IChunk IReadOnlyDictionary<uint, IChunk>.this[uint key]
         {
             get
             {
@@ -178,5 +192,34 @@ namespace FKP41.Core.RIFF
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<IChunk> GetChunks(uint chunkId) => this.chunks.Where(x => x.ChunkId == chunkId);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int IndexOf(IChunk item) => this.chunks.IndexOf(item);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Insert(int index, IChunk item) => this.chunks.Insert(index, item);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void RemoveAt(int index) => this.chunks.RemoveAt(index);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Add(IChunk item) => this.chunks.Add(item);
+        /// <inheritdoc cref="List{T}.AddRange(IEnumerable{T})"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AddRange(IEnumerable<IChunk> collection) => this.chunks.AddRange(collection);
+        /// <summary>Adds the elements of the specified span to the end of the <see cref="List{T}"/>.</summary>
+        /// <typeparam name="T">The type of elements in the list.</typeparam>
+        /// <param name="list">The list to which the elements should be added.</param>
+        /// <param name="source">The span whose elements should be added to the end of the <see cref="List{T}"/>.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="list"/> is null.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AddRange(params ReadOnlySpan<IChunk> collection) => this.chunks.AddRange(collection);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clear() => this.chunks.Clear();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Contains(IChunk item) => this.chunks.Contains(item);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CopyTo(IChunk[] array, int arrayIndex) => this.chunks.CopyTo(array, arrayIndex);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Remove(IChunk item) => !this.chunks.Remove(item);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IEnumerator<IChunk> GetEnumerator() => this.chunks.GetEnumerator();
     }
 }
