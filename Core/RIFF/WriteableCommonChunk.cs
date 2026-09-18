@@ -79,7 +79,7 @@ namespace FKP41.Core.RIFF
             IfGrow(ByteSize);
 
             Span<byte> src = System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref value), ByteSize);
-            src.CopyTo(array.AsSpan((int)chunkSize));
+            src.CopyTo(GetRemainderSpan());
             chunkSize += ByteSize;
         }
 
@@ -103,7 +103,7 @@ namespace FKP41.Core.RIFF
             IfGrow(ByteSize);
 
             Span<byte> src = System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref Unsafe.As<uint, byte>(ref value), ByteSize);
-            src.CopyTo(array.AsSpan((int)chunkSize));
+            src.CopyTo(GetRemainderSpan());
             chunkSize += ByteSize;
         }
 
@@ -127,7 +127,7 @@ namespace FKP41.Core.RIFF
             IfGrow(ByteSize);
 
             Span<byte> src = System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref Unsafe.As<ushort, byte>(ref value), ByteSize);
-            src.CopyTo(array.AsSpan((int)chunkSize));
+            src.CopyTo(GetRemainderSpan());
             chunkSize += ByteSize;
         }
 
@@ -136,14 +136,6 @@ namespace FKP41.Core.RIFF
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(short value) => Write((ushort)value);
         #endregion
-
-        private void IfGrow(uint addByteSize)
-        {
-            if (chunkSize + addByteSize > array.Length)
-            {
-                Grow((int)(chunkSize + addByteSize));
-            }
-        }
 
         /// <summary>
         /// 指定した文字列を UTF-8 に変換して書き込みます。変換した
@@ -165,7 +157,7 @@ namespace FKP41.Core.RIFF
                 if (bytesWritten > 0)
                 {
                     IfGrow((uint)bytesWritten);
-                    (buffer.Length == bytesWritten ? buffer : buffer[..bytesWritten]).CopyTo(array.AsSpan((int)chunkSize));
+                    (buffer.Length == bytesWritten ? buffer : buffer[..bytesWritten]).CopyTo(GetRemainderSpan());
                     chunkSize += (uint)bytesWritten;
                     written += (uint)bytesWritten;
 
@@ -183,6 +175,26 @@ namespace FKP41.Core.RIFF
             return written + 1;
         }
 
+        public void Write(scoped ReadOnlySpan<byte> value)
+        {
+            if (!value.IsEmpty)
+            {
+                IfGrow((uint)value.Length);
+                value.CopyTo(GetRemainderSpan());
+                chunkSize += (uint)value.Length;
+            }
+        }
+
+        private void IfGrow(uint addByteSize)
+        {
+            if (chunkSize + addByteSize > array.Length)
+            {
+                Grow((int)(chunkSize + addByteSize));
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Span<byte> GetRemainderSpan() => array.AsSpan((int)chunkSize);
         #endregion
 
         protected void Grow(int minimumLength)
