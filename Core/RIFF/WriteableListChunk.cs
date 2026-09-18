@@ -1,9 +1,10 @@
 ﻿using System.IO;
+using System.Collections;
 using System.Runtime.CompilerServices;
 
 namespace FKP41.Core.RIFF
 {
-    public class WriteableListChunk : IChunk
+    public class WriteableListChunk : IChunk, IReadOnlyDictionary<uint, IChunk>
     {
         private readonly uint chunkId;
         private List<IChunk> chunks;
@@ -43,6 +44,36 @@ namespace FKP41.Core.RIFF
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => listId;
+        }
+
+        IEnumerable<uint> IReadOnlyDictionary<uint, IChunk>.Keys
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.chunks.Select(x => x.ChunkId);
+        }
+
+        IEnumerable<IChunk> IReadOnlyDictionary<uint, IChunk>.Values
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.chunks;
+        }
+
+        public int Count
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.chunks.Count;
+        }
+
+        public IChunk this[uint chunkId]
+        {
+            get
+            {
+                if (TryGetChunk(chunkId, out IChunk? chunk))
+                {
+                    return chunk;
+                }
+                throw new KeyNotFoundException();
+            }
         }
 
         public void WriteChunk(Stream stream)
@@ -114,5 +145,38 @@ namespace FKP41.Core.RIFF
             u = BitConverter.IsLittleEndian ? listId : System.Buffers.Binary.BinaryPrimitives.ReverseEndianness(listId);
             stream.Write(src);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool IReadOnlyDictionary<uint, IChunk>.ContainsKey(uint key) => this.chunks.Any(x => x.ChunkId == key);
+
+        bool IReadOnlyDictionary<uint, IChunk>.TryGetValue(uint key, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out IChunk value) => TryGetChunk(key, out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        IEnumerator<KeyValuePair<uint, IChunk>> IEnumerable<KeyValuePair<uint, IChunk>>.GetEnumerator()
+        {
+            return this.chunks.Select(x => new KeyValuePair<uint, IChunk>(x.ChunkId, x)).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            throw new NotSupportedException();
+        }
+
+        public bool TryGetChunk(uint chunkId, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out IChunk value)
+        {
+            ReadOnlySpan<IChunk> chunks = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(this.chunks);
+            for (int i = 0; i < chunks.Length; i++)
+            {
+                ref readonly IChunk chunk = ref chunks[i];
+                if (chunk.ChunkId == chunkId)
+                {
+                    value = chunk;
+                    return true;
+                }
+            }
+            value = null;
+            return false;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IEnumerable<IChunk> GetChunks(uint chunkId) => this.chunks.Where(x => x.ChunkId == chunkId);
     }
 }
