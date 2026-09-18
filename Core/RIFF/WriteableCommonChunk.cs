@@ -145,6 +145,44 @@ namespace FKP41.Core.RIFF
             }
         }
 
+        /// <summary>
+        /// 指定した文字列を UTF-8 に変換して書き込みます。変換した
+        /// <see cref="byte"/> データの末尾には <see langword="null"/> 文字 (0) が追加されます。
+        /// </summary>
+        /// <param name="value">書き込む文字列。</param>
+        /// <returns>末尾の <see langword="null"/> 文字を含む、書き込まれた <see cref="byte"/> 数。</returns>
+        public uint WriteUtf8(string value)
+        {
+            Span<byte> buffer = stackalloc byte[64];
+
+            ReadOnlySpan<char> chars = value.AsSpan();
+            uint written = 0;
+
+            do
+            {
+                var status = System.Text.Unicode.Utf8.FromUtf16(chars, buffer, out int charsRead, out int bytesWritten);
+
+                if (bytesWritten > 0)
+                {
+                    IfGrow((uint)bytesWritten);
+                    (buffer.Length == bytesWritten ? buffer : buffer[..bytesWritten]).CopyTo(array.AsSpan((int)chunkSize));
+                    chunkSize += (uint)bytesWritten;
+                    written += (uint)bytesWritten;
+
+                    if (status == System.Buffers.OperationStatus.DestinationTooSmall)
+                    {
+                        chars = chars[charsRead..];
+                        continue;
+                    }
+                }
+            }
+            while (false);
+
+            IfGrow(1);
+            array[chunkSize++] = 0;
+            return written + 1;
+        }
+
         #endregion
 
         protected void Grow(int minimumLength)
