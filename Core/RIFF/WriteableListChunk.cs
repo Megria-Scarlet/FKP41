@@ -9,10 +9,11 @@ namespace FKP41.Core.RIFF
         private List<IChunk> chunks;
         protected uint listId;
 
-        public WriteableListChunk()
+        public WriteableListChunk(uint listId)
         {
-            chunkId = RIFFWriter.GetListFourCC();
-            chunks = new(4);
+            this.chunkId = RIFFWriter.GetListFourCC();
+            this.chunks = new(4);
+            this.listId = listId;
         }
 
         public uint ChunkId
@@ -57,25 +58,28 @@ namespace FKP41.Core.RIFF
                 {
                     writeableListChunk.WriteChunk(stream);
                 }
+                else if (chunk.GetType() == typeof(WriteableCommonChunk))
+                {
+                    ((WriteableCommonChunk)chunk).WriteChunk(stream); // WriteableCommonChunk 型はパディング処理を行うため再帰処理。
+                }
                 else // パディング処理を確認しながら書き込み。
                 {
                     WriteChunkSafe(stream, chunks[i]);
                 }
             }
         }
+        /// <summary>
+        /// パディング処理を厳密にチェックをして、指定した <see cref="IChunk"/> 型のオブジェクトのデータを <see cref="Stream"/> に書き込みます。
+        /// </summary>
+        /// <param name="stream"><see cref="IChunk"/> 型のオブジェクトのデータを書き込む <see cref="Stream"/> 型のオブジェクト。</param>
+        /// <param name="chunk"><paramref name="stream"/> にデータを書き込む <see cref="IChunk"/> 型のオブジェクト。</param>
         private static void WriteChunkSafe(Stream stream, IChunk chunk)
         {
             long pos = stream.Position;
             chunk.WriteChunk(stream);
             uint written = checked((uint)unchecked(stream.Position - pos));
 
-            uint totalByteSize = chunk.ChunkSize;
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(totalByteSize, uint.MaxValue - 9);
-            totalByteSize = chunk.ChunkSize + 8;
-
-            if (uint.IsOddInteger(totalByteSize))
-                totalByteSize++;
-            // totalByteSize == ChunkId, ChunkSize, 実データ, パディングを合算した byte 数。
+            uint totalByteSize = GetTotalByteSize(chunk); // ChunkId, ChunkSize, 実データ, パディングを合算した byte 数。
 
             if (written < totalByteSize)
             {
@@ -85,6 +89,17 @@ namespace FKP41.Core.RIFF
                     stream.WriteByte(0);
                 }
                 while (--write > 0);
+            }
+
+            static uint GetTotalByteSize(IChunk chunk)
+            {
+                uint totalByteSize = chunk.ChunkSize;
+                ArgumentOutOfRangeException.ThrowIfGreaterThan(totalByteSize, uint.MaxValue - 9);
+                totalByteSize = chunk.ChunkSize + 8;
+
+                if (uint.IsOddInteger(totalByteSize))
+                    totalByteSize++;
+                return totalByteSize;
             }
         }
         private void WriteChunkHeadToStream(Stream stream)
