@@ -218,7 +218,7 @@ namespace FKP41.Core.RIFF
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CopyTo(IChunk[] array, int arrayIndex) => this.chunks.CopyTo(array, arrayIndex);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void CopyTo(Span<IChunk> destination) => this.chunks.CopyTo(destination);
+        public void CopyTo(scoped Span<IChunk> destination) => this.chunks.CopyTo(destination);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Remove(IChunk item) => !this.chunks.Remove(item);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
