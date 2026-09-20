@@ -95,6 +95,7 @@ namespace FKP41.Core
             {
                 bool token = false;
                 bool isChenged = true;
+                bool isChengedBackupData = false;
                 try
                 {
                     spinLock.TryEnter(DefaultTimeout, ref token);
@@ -125,6 +126,7 @@ namespace FKP41.Core
                                 };
                                 backupData = cache;
                             }
+                            isChengedBackupData = true;
                         }
                     }
                 }
@@ -136,6 +138,10 @@ namespace FKP41.Core
                 {
                     NotifyPropertyChanged(nameof(IsEnable));
                     NotifyPropertyChanged(nameof(Status));
+                }
+                if (isChengedBackupData)
+                {
+                    NotifyPropertyChanged(nameof(Options));
                 }
             }
         }
@@ -159,6 +165,41 @@ namespace FKP41.Core
 
         // バックアップ実行時のファイル更新時刻をキャッシュするコレクション。
         private SortedList<string, DateTime>? backupCache;
+        internal IReadOnlyDictionary<string, DateTime>? BackupCache
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => backupCache;
+            set
+            {
+                if (value is null)
+                {
+                    backupCache = null;
+                }
+                else
+                {
+                    if (backupCache is not null)
+                    {
+                        backupCache.Clear();
+                    }
+                    else
+                    {
+                        if (value is IDictionary<string, DateTime> writeble)
+                        {
+                            backupCache = new(writeble);
+                            return;
+                        }
+                        else
+                        {
+                            backupCache = new();
+                        }
+                    }
+                    foreach (var item in value)
+                    {
+                        backupCache.Add(item.Key, item.Value);
+                    }
+                }
+            }
+        }
 
         private SpinLock spinLock;
 
@@ -214,7 +255,7 @@ namespace FKP41.Core
                     }
                     isChangedStatus = status != this.status;
                 }
-                // BackupData がキャッシュの場合は更新
+                // BackupData がキャッシュの場合は backupManager の値を更新して同期します。
                 if (this.backupData is BackupDataCache backupDataCache)
                 {
                     if (backupDataCache.IsChanged)
