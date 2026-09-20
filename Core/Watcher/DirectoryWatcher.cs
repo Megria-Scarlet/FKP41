@@ -270,10 +270,9 @@ namespace FKP41.Core
             }
             NotifyPropertyChanged(nameof(Status));
 
-            IEnumerable<FileInfo> files = backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories));
+            FileInfo[] files = [.. backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories))];
             IEnumerable<(string, string)> archivePair = files.Select(f => (f.FullName, Path.Combine(_directory.Name, Path.GetRelativePath(_directory.FullName, f.FullName))));
             backupData.CreateBackupArchive(DateTime.Now, archivePair);
-
 #if DEBUG
             backupData.DeleteMostOldBackupFiles(1, true);
 #else
@@ -290,6 +289,8 @@ namespace FKP41.Core
                 isRunningBackup = false;
                 status = WatcherStatus.Continue;
                 isChangedByteSize = IsPropertyChanged(ref this.rawByteSize, rawByteSize);
+
+                UpdateBackupCache(files);
             }
             finally
             {
@@ -309,6 +310,31 @@ namespace FKP41.Core
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// <see cref="backupCache"/> の要素を更新します。
+        /// </summary>
+        /// <param name="files"></param>
+        private void UpdateBackupCache(scoped ReadOnlySpan<FileInfo> files)
+        {
+            if (files.IsEmpty)
+            {
+                this.backupCache = null;
+            }
+            else
+            {
+                if (this.backupCache is null)
+                    this.backupCache = new(RoundUp4(files.Length));
+                else
+                    this.backupCache.Clear();
+                foreach (var file in files)
+                {
+                    this.backupCache.Add(file.FullName, file.LastWriteTimeUtc);
+                }
+            }
+
+            static int RoundUp4(int value) => (int)Math.Min(((uint)value + 3) & 0xFFFFFFFCu, int.MaxValue);
         }
 
         private class BackupDataCache : BackupOptionsData, ICloneable
