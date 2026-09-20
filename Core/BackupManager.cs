@@ -250,6 +250,7 @@ namespace FKP41.Core
         /// <param name="backupData">設定する <see cref="BackupOptionsData"/> 型のオブジェクト。</param>
         /// <param name="isAdd">ファイルパスが存在しない場合、新規に追加する場合は <see langword="true"/> 。</param>
         /// <returns>正常に設定できた場合は <see langword="true"/> 。</returns>
+        [Obsolete]
         public bool SetBackupData(string filePath, BackupOptionsData backupData, bool isAdd = true)
         {
             if (backupPairs.TryGetValue(filePath, out var value))
