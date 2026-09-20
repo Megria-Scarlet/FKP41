@@ -68,6 +68,7 @@ namespace FKP41.Core
         {
             return value1.isValid == value2.isValid
                    && value1.maxBackupCount == value2.maxBackupCount
+                   && EqualityComparer<DateTime?>.Default.Equals(value1.LastBackupTime, value2.LastBackupTime)
                    && (ReferenceEquals(value1.backupDirectory, value2.backupDirectory)
                        || string.Equals(value1.backupDirectory.FullName, value2.backupDirectory.FullName, StringComparison.OrdinalIgnoreCase));
         }
@@ -169,7 +170,6 @@ namespace FKP41.Core
     {
         public string? BackupDirectory;
         public uint MaxBackupCount;
-        public DateTime? LastBackupTime;
         public bool IsValid;
 
         public BackupOptionsJsonData(string? backupDirectory) : this(backupDirectory, 3, true)
@@ -188,10 +188,7 @@ namespace FKP41.Core
         {
             return new(Path.GetRelativePath(backupDirectory, backupOptions.BackupDirectory.FullName),
                        backupOptions.MaxBackupCount,
-                       backupOptions.IsValid)
-            {
-                LastBackupTime = backupOptions.LastBackupTime,
-            };
+                       backupOptions.IsValid);
         }
 
         public BackupOptionsData ToOptions(string backupDirectory)
@@ -199,18 +196,12 @@ namespace FKP41.Core
             if (Path.IsPathRooted(BackupDirectory))
             {
                 DirectoryInfo directoryInfo = new(BackupDirectory);
-                return new(directoryInfo, MaxBackupCount, IsValid)
-                {
-                    LastBackupTime = this.LastBackupTime
-                };
+                return new(directoryInfo, MaxBackupCount, IsValid);
             }
             else if (!string.IsNullOrEmpty(BackupDirectory))
             {
                 DirectoryInfo directoryInfo = new(Path.Combine(backupDirectory, BackupDirectory));
-                return new(directoryInfo, MaxBackupCount, IsValid)
-                {
-                    LastBackupTime = this.LastBackupTime
-                };
+                return new(directoryInfo, MaxBackupCount, IsValid);
             }
             else
             {
