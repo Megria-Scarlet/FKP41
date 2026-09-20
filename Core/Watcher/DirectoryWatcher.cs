@@ -158,7 +158,7 @@ namespace FKP41.Core
         }
 
         // バックアップ実行時のファイル更新時刻をキャッシュするコレクション。
-        private OrderedDictionary<string, DateTime>? backupCache;
+        private SortedList<string, DateTime>? backupCache;
 
         private SpinLock spinLock;
 
@@ -247,6 +247,8 @@ namespace FKP41.Core
         {
             bool token = false;
 
+            FileInfo[] files;
+            bool isCreateBackupArchive;
             try
             {
                 spinLock.TryEnter(DefaultTimeout, ref token);
@@ -258,6 +260,9 @@ namespace FKP41.Core
                 {
                     isRunningBackup = true;
                     status = WatcherStatus.Processing;
+
+                    files = [.. backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories))];
+                    isCreateBackupArchive = IsAnyChangedFiles(files);
                 }
             }
             catch
@@ -270,9 +275,11 @@ namespace FKP41.Core
             }
             NotifyPropertyChanged(nameof(Status));
 
-            FileInfo[] files = [.. backupManager.RemovedBackupFiles(this._directory.EnumerateFiles("*.*", SearchOption.AllDirectories))];
-            IEnumerable<(string, string)> archivePair = files.Select(f => (f.FullName, Path.Combine(_directory.Name, Path.GetRelativePath(_directory.FullName, f.FullName))));
-            backupData.CreateBackupArchive(DateTime.Now, archivePair);
+            if (isCreateBackupArchive)
+            {
+                IEnumerable<(string, string)> archivePair = files.Select(f => (f.FullName, Path.Combine(_directory.Name, Path.GetRelativePath(_directory.FullName, f.FullName))));
+                backupData.CreateBackupArchive(DateTime.Now, archivePair);
+            }
 #if DEBUG
             backupData.DeleteMostOldBackupFiles(1, true);
 #else
@@ -281,7 +288,7 @@ namespace FKP41.Core
 
             token = false;
             bool isChangedByteSize = false;
-            long rawByteSize = backupManager.RemovedBackupFiles(_directory.EnumerateFiles("*.*", SearchOption.AllDirectories)).Sum(fi => fi.Length);
+            long rawByteSize = files.Sum(fi => fi.Length);
             try
             {
                 spinLock.TryEnter(ref token);
@@ -335,6 +342,29 @@ namespace FKP41.Core
             }
 
             static int RoundUp4(int value) => (int)Math.Min(((uint)value + 3) & 0xFFFFFFFCu, int.MaxValue);
+        }
+        private bool IsAnyChangedFiles(scoped ReadOnlySpan<FileInfo> files)
+        {
+            var cache = this.backupCache;
+            if (cache is null || cache.Count == 0)
+            {
+                return !files.IsEmpty;
+            }
+            else if (files.Length != cache.Count)
+            {
+                return true;
+            }
+            else
+            {
+                foreach (var file in files)
+                {
+                    if (!cache.TryGetValue(file.FullName, out var result) || result != file.LastWriteTimeUtc)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
         }
 
         private class BackupDataCache : BackupOptionsData, ICloneable
