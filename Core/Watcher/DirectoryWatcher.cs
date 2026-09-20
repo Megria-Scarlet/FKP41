@@ -292,18 +292,22 @@ namespace FKP41.Core
             try
             {
                 spinLock.TryEnter(ref token);
-                lastBackupTime = DateTime.Now;
                 isRunningBackup = false;
                 status = WatcherStatus.Continue;
                 isChangedByteSize = IsPropertyChanged(ref this.rawByteSize, rawByteSize);
 
-                UpdateBackupCache(files);
+                if (isCreateBackupArchive)
+                {
+                    lastBackupTime = DateTime.Now;
+                    UpdateBackupCache(files); // バックアップが作成された場合はキャッシュを更新。
+                }
             }
             finally
             {
                 if (token) spinLock.Exit();
             }
-            NotifyPropertyChanged(nameof(LastBackupTime));
+            if (isCreateBackupArchive)
+                NotifyPropertyChanged(nameof(LastBackupTime));
             NotifyPropertyChanged(nameof(Status));
             if (isChangedByteSize)
                 NotifyPropertyChanged(nameof(RawByteSize));
