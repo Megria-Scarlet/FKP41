@@ -157,6 +157,9 @@ namespace FKP41.Core
             }
         }
 
+        // バックアップ実行時のファイル更新時刻をキャッシュするコレクション。
+        private OrderedDictionary<string, DateTime>? backupCache;
+
         private SpinLock spinLock;
 
         public DirectoryWatcher(string path, BackupManager backupManager) : this(path, backupManager, backupManager.GetBackupData(path))
@@ -200,14 +203,14 @@ namespace FKP41.Core
                         if (status != WatcherStatus.Continue)
                         {
                             this.status = WatcherStatus.Continue;
-                            isChangedCount = IsChanged(ref this.fileCount, (uint)_directory.EnumerateFiles().Count());
-                            isChangedByteSize = IsChanged(ref this.rawByteSize, backupManager.RemovedBackupFiles(_directory.EnumerateFiles("*.*", SearchOption.AllDirectories)).Sum(fi => fi.Length));
+                            isChangedCount = IsPropertyChanged(ref this.fileCount, (uint)_directory.EnumerateFiles().Count());
+                            isChangedByteSize = IsPropertyChanged(ref this.rawByteSize, backupManager.RemovedBackupFiles(_directory.EnumerateFiles("*.*", SearchOption.AllDirectories)).Sum(fi => fi.Length));
                         }
                     }
                     else
                     {
                         this.status = WatcherStatus.NotFound;
-                        isChangedByteSize = IsChanged(ref this.rawByteSize, 0);
+                        isChangedByteSize = IsPropertyChanged(ref this.rawByteSize, 0);
                     }
                     isChangedStatus = status != this.status;
                 }
@@ -286,7 +289,7 @@ namespace FKP41.Core
                 lastBackupTime = DateTime.Now;
                 isRunningBackup = false;
                 status = WatcherStatus.Continue;
-                isChangedByteSize = IsChanged(ref this.rawByteSize, rawByteSize);
+                isChangedByteSize = IsPropertyChanged(ref this.rawByteSize, rawByteSize);
             }
             finally
             {
@@ -298,7 +301,7 @@ namespace FKP41.Core
                 NotifyPropertyChanged(nameof(RawByteSize));
         }
 
-        private static bool IsChanged<T>(scoped ref T destination, T value) where T : System.Numerics.IEqualityOperators<T, T, bool>
+        private static bool IsPropertyChanged<T>(scoped ref T destination, T value) where T : System.Numerics.IEqualityOperators<T, T, bool>
         {
             if (destination != value)
             {
