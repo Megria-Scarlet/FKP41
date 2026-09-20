@@ -52,6 +52,8 @@ namespace FKP41.Core
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => lastBackupTime;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => lastBackupTime = value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -83,16 +85,16 @@ namespace FKP41.Core
 
                 if (fileInfo is null)
                 {
-                    lastBackupTime = null;
+                    // lastBackupTime = null;
                 }
-                else
+                else if (!lastBackupTime.HasValue || lastBackupTime.Value < fileInfo.LastWriteTime)
                 {
                     lastBackupTime = fileInfo.LastWriteTime;
                 }
             }
             else
             {
-                lastBackupTime = null;
+                // lastBackupTime = null;
             }
         }
 
@@ -167,6 +169,7 @@ namespace FKP41.Core
     {
         public string? BackupDirectory;
         public uint MaxBackupCount;
+        public DateTime? LastBackupTime;
         public bool IsValid;
 
         public BackupOptionsJsonData(string? backupDirectory) : this(backupDirectory, 3, true)
@@ -185,7 +188,10 @@ namespace FKP41.Core
         {
             return new(Path.GetRelativePath(backupDirectory, backupOptions.BackupDirectory.FullName),
                        backupOptions.MaxBackupCount,
-                       backupOptions.IsValid);
+                       backupOptions.IsValid)
+            {
+                LastBackupTime = backupOptions.LastBackupTime,
+            };
         }
 
         public BackupOptionsData ToOptions(string backupDirectory)
@@ -193,12 +199,18 @@ namespace FKP41.Core
             if (Path.IsPathRooted(BackupDirectory))
             {
                 DirectoryInfo directoryInfo = new(BackupDirectory);
-                return new(directoryInfo, MaxBackupCount, IsValid);
+                return new(directoryInfo, MaxBackupCount, IsValid)
+                {
+                    LastBackupTime = this.LastBackupTime
+                };
             }
             else if (!string.IsNullOrEmpty(BackupDirectory))
             {
                 DirectoryInfo directoryInfo = new(Path.Combine(backupDirectory, BackupDirectory));
-                return new(directoryInfo, MaxBackupCount, IsValid);
+                return new(directoryInfo, MaxBackupCount, IsValid)
+                {
+                    LastBackupTime = this.LastBackupTime
+                };
             }
             else
             {
