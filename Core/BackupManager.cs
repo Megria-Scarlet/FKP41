@@ -347,6 +347,11 @@ namespace FKP41.Core
             return indexes.Select(x => new DirectoryWatcher(x, this, backupPairs[x]));
         }
 
+        private void OptionsPropertyChangedCallback(object? sender, System.ComponentModel.PropertyChangedEventArgs eventArgs)
+        {
+            isChengedBackupPairs = true;
+        }
+
         #region Dispose
 
         private void Dispose(bool disposing)
