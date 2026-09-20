@@ -18,7 +18,7 @@ namespace FKP41.Core.RIFF
             this.isLeaveOpen = isLeaveOpen;
         }
 
-        public void WriteChunk<TChunk>(TChunk chunk) where TChunk : IChunk
+        public void WriteChunk<TChunk>(TChunk chunk) where TChunk : IChunk, allows ref struct
         {
             if (stream.Position == 0)
             {
