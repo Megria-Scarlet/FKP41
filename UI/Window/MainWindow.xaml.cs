@@ -44,7 +44,7 @@ namespace FKP41.WPF
             backupPath = new(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(App.DllFilePath)!, "backup"));
             backupManager = new(backupPath);
 
-            watcherViewModels = [.. backupManager.CreateWatchers().Select(x => new WatcherViewModel(x))];
+            watcherViewModels = [.. backupManager.GetWatchers().Select(x => new WatcherViewModel(x))];
             foreach (var viewMoel in watcherViewModels)
             {
                 viewMoel.DeleteCommand = new WatcherDeleteCommand(watcherViewModels, viewMoel, backupManager);
@@ -94,7 +94,7 @@ namespace FKP41.WPF
             renderTimer.Stop();
             backupTimer.Dispose();
 
-            if (backupManager.IsChengedBackupPairs || backupManager.OnUpdateBackupData(watcherViewModels))
+            if (backupManager.IsChengedBackupPairs || backupManager.OnUpdateBackupData())
             {
                 backupManager.SaveIndexFile();
             }
@@ -229,8 +229,11 @@ namespace FKP41.WPF
                 }
                 else if (System.IO.Directory.Exists(name))
                 {
+                    /*
                     DirectoryWatcher watcher = new(name, backupManager);
                     watcher.OnUpdateStatus();
+                    */
+                    IWatcher watcher = backupManager.Register(name);
                     watcherViewModels.Add(new(watcher));
                 }
             }
