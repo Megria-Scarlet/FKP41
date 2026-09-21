@@ -203,10 +203,6 @@ namespace FKP41.Core
 
         private SpinLock spinLock;
 
-        public DirectoryWatcher(string path, BackupManager backupManager) : this(path, backupManager, backupManager.GetBackupData(path))
-        {
-
-        }
         public DirectoryWatcher(string path, BackupManager backupManager, BackupOptionsData backupData)
         {
             _directory = new(path);
@@ -260,11 +256,17 @@ namespace FKP41.Core
                 {
                     if (backupDataCache.IsChanged)
                     {
+                        if (backupManager.OnUpdateBackupData(this.FilePath, out var data))
+                        {
+                            this.backupData = data;
+                        }
+                        /*
                         BackupOptionsData backupData = backupDataCache.Clone();
                         if (backupManager.SetBackupData(FilePath, backupData))
                         {
                             this.backupData = backupData;
                         }
+                        */
                     }
                 }
             }
