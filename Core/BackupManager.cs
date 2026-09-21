@@ -14,8 +14,10 @@ namespace FKP41.Core
 
         private ObservableObject<string> rootBackupDirectory;
         private bool disposedValue;
-        private Dictionary<string, BackupOptionsData> backupPairs;
-        private Dictionary<string, BackupOptionsData>? reservationDeleteBackups;
+        private Dictionary<string, OptionsPair>? reservationDeleteBackups;
+
+        private Dictionary<string, OptionsPair> backupPairs1;
+
         private List<string> indexes;
         private bool isChengedBackupPairs;
 
@@ -43,33 +45,16 @@ namespace FKP41.Core
 
         #region Add・Remove
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DirectoryInfo GetBackupDirectory(string path)
-        {
-            return GetBackupData(path).BackupDirectory;
-        }
-        public BackupOptionsData GetBackupData(string path)
-        {
-            if (backupPairs.TryGetValue(path, out BackupOptionsData? backupData))
-            {
-                if (backupData is not null)
-                {
-                    return backupData;
-                }
-                backupPairs.Remove(path);
-            }
-            return Register(path);
-        }
-
-        private BackupOptionsData Register(string path)
+        public IWatcher Register(string path)
         {
             if (reservationDeleteBackups is not null && reservationDeleteBackups.TryGetValue(path, out var backupOptions))
             {
-                backupPairs.Add(path, backupOptions);
+                // backupPairs.Add(path, backupOptions);
+                backupPairs1.Add(path, backupOptions);
                 reservationDeleteBackups.Remove(path);
                 if (reservationDeleteBackups.Count == 0)
                     reservationDeleteBackups = null;
-                return backupOptions;
+                return backupOptions.watcher;
             }
             string s;
             do
@@ -78,28 +63,28 @@ namespace FKP41.Core
             }
             while (Directory.Exists(s));
             BackupOptionsData backupData = new(new DirectoryInfo(s));
-            backupPairs.Add(path, backupData);
+            OptionsPair pair = CreateOptionsPair(path, backupData);
+            backupPairs1.Add(path, pair);
             SaveIndexFile();
-            return backupData;
+            return pair.watcher;
         }
 
         public bool Remove(string path)
         {
-            if (backupPairs.Remove(path, out BackupOptionsData? backupOptions))
+            if (backupPairs1.Remove(path, out var value))
             {
                 isChengedBackupPairs = true;
                 if (reservationDeleteBackups is null)
                 {
                     reservationDeleteBackups = new(4)
                     {
-                        {path, backupOptions }
+                        {path, value }
                     };
                 }
-                else if (!reservationDeleteBackups.TryAdd(path, backupOptions))
+                else if (!reservationDeleteBackups.TryAdd(path, value))
                 {
-                    reservationDeleteBackups[path] = backupOptions;
+                    reservationDeleteBackups[path] = value;
                 }
-
                 return true;
             }
             return false;
@@ -107,12 +92,12 @@ namespace FKP41.Core
 
         #endregion
 
-        [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs))]
+        [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs1), nameof(indexes))]
         private void OnRootBackupDirectoryChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
         {
             OnRootBackupDirectoryChanged();
         }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs), nameof(indexes))]
+        [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs1), nameof(indexes))]
         private void OnRootBackupDirectoryChanged()
         {
 #pragma warning disable CS8774 // 終了時にメンバーには null 以外の値が含まれている必要があります。
@@ -129,28 +114,31 @@ namespace FKP41.Core
                 }
                 catch (JsonException)
                 {
-                    backupPairs = [];
+                    // backupPairs = [];
+                    backupPairs1 = [];
                     indexes = [];
                 }
             }
             else
             {
-                backupPairs = [];
+                // backupPairs = [];
+                backupPairs1 = [];
                 indexes = [];
             }
 
-            [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs), nameof(indexes))]
+            [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(backupPairs1), nameof(indexes))]
             void LoadJson(Stream stream)
             {
                 var pairs = JsonSerializer.Deserialize<Dictionary<string, BackupOptionsJsonData>>(stream, GetJsonOptions())!;
                 int capacity = Math.Max(((pairs.Count + 3) >> 2) << 2, 16);
-                this.backupPairs = ToOptionsData(pairs, rootBackupDirectory.Value).ToDictionary();
-                this.indexes = [.. this.backupPairs.Keys];
+                this.backupPairs1 = new(capacity);
 
-                static IEnumerable<KeyValuePair<string, BackupOptionsData>> ToOptionsData(IEnumerable<KeyValuePair<string, BackupOptionsJsonData>> pairs, string backupDirectory)
+                foreach (var pair in pairs)
                 {
-                    return pairs.Select(x => new KeyValuePair<string, BackupOptionsData>(x.Key, x.Value.ToOptions(backupDirectory)));
+                    BackupOptionsData data = pair.Value.ToOptions(rootBackupDirectory.Value);
+                    backupPairs1.Add(pair.Key, CreateOptionsPair(pair.Key, data));
                 }
+                this.indexes = [.. this.backupPairs1.Keys];
             }
         }
         /// <summary>
@@ -168,7 +156,7 @@ namespace FKP41.Core
             {
                 foreach (var optionsData in reservationDeleteBackups.Values)
                 {
-                    DirectoryInfo backupDirectory = optionsData.BackupDirectory;
+                    DirectoryInfo backupDirectory = optionsData.fileData.BackupDirectory;
                     if (backupDirectory.Exists)
                     {
                         do
@@ -197,6 +185,7 @@ namespace FKP41.Core
                         while (false);
                     }
                 }
+                reservationDeleteBackups = null;
             }
 
 
@@ -211,18 +200,20 @@ namespace FKP41.Core
             {
                 string oldFileName = oldFile.FullName;
                 FileInfo newFile = new(Path.Combine(Path.GetTempPath(), Path.GetTempFileName()));
-                SaveNewFile(newFile, rootBackupDirectory.Value, backupPairs);
+                OnUpdateBackupData();
+                SaveNewFile(newFile, rootBackupDirectory.Value, backupPairs1);
                 oldFile.MoveTo(Path.Combine(Path.GetDirectoryName(oldFile.FullName) ?? string.Empty, Path.ChangeExtension(IndexFileName, "tmp")), true);
                 newFile.MoveTo(oldFileName, false);
             }
             else
             {
-                SaveNewFile(oldFile, rootBackupDirectory.Value, backupPairs);
+                OnUpdateBackupData();
+                SaveNewFile(oldFile, rootBackupDirectory.Value, backupPairs1);
             }
 
             isChengedBackupPairs = false;
 
-            static void SaveNewFile(FileInfo newFileInfo, string backupDirectory, Dictionary<string, BackupOptionsData> backupPairs)
+            static void SaveNewFile(FileInfo newFileInfo, string backupDirectory, Dictionary<string, OptionsPair> backupPairs)
             {
                 FileStream fileStream;
                 if (newFileInfo.Exists)
@@ -234,7 +225,7 @@ namespace FKP41.Core
                 {
                     fileStream = newFileInfo.Create();
                 }
-                JsonSerializer.Serialize(fileStream, backupPairs.ToDictionary(x => x.Key, x => BackupOptionsJsonData.Create(x.Key, x.Value, backupDirectory)), GetJsonOptions());
+                JsonSerializer.Serialize(fileStream, backupPairs.ToDictionary(x => x.Key, x => BackupOptionsJsonData.Create(x.Key, x.Value.fileData, backupDirectory)), GetJsonOptions());
                 fileStream.Dispose();
             }
         }
@@ -243,53 +234,34 @@ namespace FKP41.Core
             return new(Path.Combine(rootBackupDirectory.Value, IndexFileName));
         }
 
-        /// <summary>
-        /// 指定したファイルパスの <see cref="BackupOptionsData"/> を設定します。
-        /// </summary>
-        /// <param name="filePath">ファイルパス。</param>
-        /// <param name="backupData">設定する <see cref="BackupOptionsData"/> 型のオブジェクト。</param>
-        /// <param name="isAdd">ファイルパスが存在しない場合、新規に追加する場合は <see langword="true"/> 。</param>
-        /// <returns>正常に設定できた場合は <see langword="true"/> 。</returns>
-        [Obsolete]
-        public bool SetBackupData(string filePath, BackupOptionsData backupData, bool isAdd = true)
+        public bool OnUpdateBackupData()
         {
-            if (backupPairs.TryGetValue(filePath, out var value))
+            bool result = false;
+            foreach (var p in backupPairs1)
             {
-                if (!backupData.Equals(value))
+                var value = p.Value;
+                if (!value.watcher.Options.Equals(value.fileData))
                 {
-                    backupPairs[filePath] = backupData;
-                    isChengedBackupPairs = true;
-                    return true;
+                    value = value with { fileData = new(value.watcher.Options) };
+                    backupPairs1[p.Key] = value;
+                    result = true;
                 }
-                return false;
             }
-            else if (isAdd)
+            return result;
+        }
+        public bool OnUpdateBackupData(string filePath) => OnUpdateBackupData(filePath, out _);
+        internal bool OnUpdateBackupData(string filePath, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out BackupOptionsData data)
+        {
+            if (backupPairs1.TryGetValue(filePath, out var value) && !value.watcher.Options.Equals(value.fileData))
             {
-                backupPairs.Add(filePath, backupData);
-                indexes.Add(filePath);
+                data = new(value.watcher.Options);
+                value = value with { fileData = data };
+                backupPairs1[filePath] = value;
                 isChengedBackupPairs = true;
                 return true;
             }
-            else
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// このオブジェクトが保持する <see cref="BackupOptionsData"/> 型のオブジェクトを、
-        /// <see cref="IWatcher"/> オブジェクトに関連付けされている <see cref="BackupOptionsData"/> 型のオブジェクトに更新します。
-        /// </summary>
-        /// <param name="watchers"></param>
-        /// <returns>いずれかの <see cref="BackupOptionsData"/> 型のオブジェクトを更新した場合は <see langword="true"/> 。</returns>
-        public bool OnUpdateBackupData(IEnumerable<IWatcher> watchers)
-        {
-            bool result = false;
-            foreach (var watcher in watchers)
-            {
-                result |= SetBackupData(watcher.FilePath, watcher.Options, false);
-            }
-            return result;
+            data = null;
+            return false;
         }
 
         private static JsonSerializerOptions GetJsonOptions()
@@ -302,6 +274,13 @@ namespace FKP41.Core
             };
             return options;
         }
+
+        private OptionsPair CreateOptionsPair(string filePath, BackupOptionsData data)
+        {
+            DirectoryWatcher watcher = new(filePath, this, data);
+            return new(watcher, data);
+        }
+
         /// <summary>
         /// 入力された <see cref="FileInfo"/> 型のオブジェクトを列挙するオブジェクトから、バックアップディレクトリーに含まれる
         /// <see cref="FileInfo"/> 型のオブジェクトを差集合します。
@@ -341,11 +320,7 @@ namespace FKP41.Core
             return filePath.StartsWith(dirPath, StringComparison.OrdinalIgnoreCase);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IEnumerable<IWatcher> CreateWatchers()
-        {
-            return indexes.Select(x => new DirectoryWatcher(x, this, backupPairs[x]));
-        }
+        public IEnumerable<IWatcher> GetWatchers() => backupPairs1.Values.Select(x => x.watcher);
 
         private void OptionsPropertyChangedCallback(object? sender, System.ComponentModel.PropertyChangedEventArgs eventArgs)
         {
@@ -385,5 +360,17 @@ namespace FKP41.Core
             GC.SuppressFinalize(this);
         }
         #endregion
+
+        private struct OptionsPair
+        {
+            public IWatcher watcher;
+            public BackupOptionsData fileData;
+
+            public OptionsPair(IWatcher watcher, BackupOptionsData data)
+            {
+                this.watcher = watcher;
+                this.fileData = data;
+            }
+        }
     }
 }
